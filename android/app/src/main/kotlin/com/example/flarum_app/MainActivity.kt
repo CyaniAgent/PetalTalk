@@ -1,4 +1,4 @@
-package com.example.flarum_app
+package top.sorange.PetalTalk
 
 import io.flutter.embedding.android.FlutterActivity
 

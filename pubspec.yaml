@@ -1,5 +1,5 @@
-name: flarum_app
-description: "A new Flutter project."
+name: petal_talk
+description: "PetalTalk - A beautiful Flarum community client."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
@@ -52,8 +52,7 @@ dependencies:
   webview_cookie_manager: ^2.0.6
   # 浏览器
   webview_flutter: ^4.8.0
-  # windows webview 支持
-  webview_windows: ^0.3.0
+
   # 解决sliver滑动不同步
   extended_nested_scroll_view: ^6.2.1
   # 上拉加载
@@ -83,6 +82,8 @@ dependencies:
   chinese_font_library: ^1.0.4
   # 链接打开
   url_launcher: ^6.2.5
+  # 自定义窗口标题栏
+  window_manager: ^0.3.1
 
 dev_dependencies:
   flutter_test:

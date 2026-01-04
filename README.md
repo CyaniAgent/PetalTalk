@@ -1,2 +1,2 @@
-# flarum_app
+# PetalTalk
 一个Flarum客户端

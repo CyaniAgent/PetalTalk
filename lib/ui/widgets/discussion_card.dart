@@ -30,9 +30,7 @@ class DiscussionCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -64,11 +62,7 @@ class DiscussionCard extends StatelessWidget {
                   if (isLocked)
                     const Padding(
                       padding: EdgeInsets.only(left: 8),
-                      child: Icon(
-                        Icons.lock,
-                        size: 14,
-                        color: Colors.grey,
-                      ),
+                      child: Icon(Icons.lock, size: 14, color: Colors.grey),
                     ),
                 ],
               ),
@@ -88,7 +82,9 @@ class DiscussionCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -115,11 +111,7 @@ class DiscussionCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
-                        Icons.circle,
-                        size: 4,
-                        color: Colors.grey,
-                      ),
+                      const Icon(Icons.circle, size: 4, color: Colors.grey),
                       const SizedBox(width: 8),
                       Text(
                         TimeFormatter.formatLocalTime(createdAt),
@@ -139,7 +131,8 @@ class DiscussionCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            commentCount.toString(),
+                            (commentCount > 0 ? commentCount - 1 : 0)
+                                .toString(),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],

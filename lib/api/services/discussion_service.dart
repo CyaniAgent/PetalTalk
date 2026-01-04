@@ -11,10 +11,7 @@ class DiscussionService {
     try {
       final response = await _api.get(
         '/api/discussions',
-        queryParameters: {
-          'page[offset]': offset,
-          'page[limit]': limit,
-        },
+        queryParameters: {'page[offset]': offset, 'page[limit]': limit},
       );
 
       if (response.statusCode == 200) {
@@ -54,24 +51,19 @@ class DiscussionService {
         data: {
           'data': {
             'type': 'discussions',
-            'attributes': {
-              'title': title,
-            },
+            'attributes': {'title': title},
             'relationships': {
               'firstPost': {
                 'data': {
                   'type': 'posts',
-                  'attributes': {
-                    'content': content,
-                  },
+                  'attributes': {'content': content},
                 },
               },
               if (tags != null && tags.isNotEmpty)
                 'tags': {
-                  'data': tags.map((tag) => {
-                    'type': 'tags',
-                    'id': tag,
-                  }).toList(),
+                  'data': tags
+                      .map((tag) => {'type': 'tags', 'id': tag})
+                      .toList(),
                 },
             },
           },

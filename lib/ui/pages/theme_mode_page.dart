@@ -40,9 +40,7 @@ class _ThemeModePageState extends State<ThemeModePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('主题模式'),
-      ),
+      appBar: AppBar(title: const Text('主题模式')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

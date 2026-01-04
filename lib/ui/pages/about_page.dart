@@ -17,21 +17,17 @@ class AboutPage extends StatelessWidget {
               const CircleAvatar(
                 radius: 64,
                 backgroundColor: Colors.blue,
-                child: Icon(
-                  Icons.forum,
-                  size: 64,
-                  color: Colors.white,
-                ),
+                child: Icon(Icons.forum, size: 64, color: Colors.white),
               ),
               const SizedBox(height: 24),
 
               // 应用名称和版本
               Text(
-                'Flarum 客户端',
+                'PetalTalk',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Text('v1.0.0', style: Theme.of(context).textTheme.bodyMedium),
+              Text('v0.0.1', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 32),
 
               // 开发者信息
@@ -69,7 +65,7 @@ class AboutPage extends StatelessWidget {
 
               // 版权信息
               const Text(
-                '© 2026 Flarum 客户端',
+                '© 2026 SakuraCake',
                 style: TextStyle(color: Colors.grey),
               ),
             ],

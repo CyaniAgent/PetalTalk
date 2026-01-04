@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
 import '../../api/services/auth_service.dart';
+import '../../utils/snackbar_utils.dart';
 import '../widgets/discussion_card.dart';
 import '../widgets/ui_main_frame.dart';
 
@@ -35,15 +36,20 @@ class _DiscussionListState extends State<DiscussionList> {
 
     // 对于刷新操作，不显示额外的加载动画，只使用RefreshIndicator的动画
     if (!isRefresh) {
-      setState(() {
-        _isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
     }
 
     final result = await _discussionService.getDiscussions(
       offset: isRefresh ? 0 : _offset,
       limit: _limit,
     );
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
 
     if (result != null) {
       final List<Discussion> newDiscussions = (result['data'] as List)
@@ -91,20 +97,20 @@ class _DiscussionListState extends State<DiscussionList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flarum 社区'),
+        title: const Text('PetalTalk'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
               // 搜索功能
-              Get.snackbar('提示', '功能开发中', snackPosition: SnackPosition.BOTTOM);
+              SnackbarUtils.showDevelopmentInProgress(context);
             },
           ),
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
               // 跳转到消息页
-              Get.snackbar('提示', '功能开发中', snackPosition: SnackPosition.BOTTOM);
+              SnackbarUtils.showDevelopmentInProgress(context);
             },
           ),
           IconButton(
@@ -163,7 +169,7 @@ class _DiscussionListState extends State<DiscussionList> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // 创建主题帖
-          Get.snackbar('提示', '功能开发中', snackPosition: SnackPosition.BOTTOM);
+          Get.toNamed('/create-discussion');
         },
         child: const Icon(Icons.add),
       ),
@@ -218,19 +224,19 @@ class HomePage extends StatelessWidget {
                     children: [
                       const CircleAvatar(
                         radius: 50,
-                        backgroundColor: Colors.grey,
+                        backgroundColor: Colors.blue,
                         // 这里应该显示用户头像
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        '用户名',
+                        '占位符',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text('用户邮箱@example.com'),
+                      const Text('占位符@sorange.top'),
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () {

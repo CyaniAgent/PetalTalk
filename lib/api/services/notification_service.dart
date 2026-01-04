@@ -37,9 +37,7 @@ class NotificationService {
       final response = await _api.post(
         '/api/notifications/read',
         data: {
-          'data': {
-            'type': 'notifications',
-          },
+          'data': {'type': 'notifications'},
         },
       );
 
@@ -59,9 +57,7 @@ class NotificationService {
           'data': {
             'type': 'notifications',
             'id': id,
-            'attributes': {
-              'isRead': true,
-            },
+            'attributes': {'isRead': true},
           },
         },
       );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../api/services/auth_service.dart';
+import '../../utils/snackbar_utils.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -153,10 +153,8 @@ class _LoginPageState extends State<LoginPage> {
                             TextButton(
                               onPressed: () {
                                 // TODO: 忘记密码
-                                Get.snackbar(
-                                  '提示',
-                                  '功能开发中',
-                                  snackPosition: SnackPosition.BOTTOM,
+                                SnackbarUtils.showDevelopmentInProgress(
+                                  context,
                                 );
                               },
                               child: const Text('忘记密码?'),
@@ -205,11 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                         TextButton(
                           onPressed: () {
                             // TODO: 跳转到注册页面
-                            Get.snackbar(
-                              '提示',
-                              '功能开发中',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
+                            SnackbarUtils.showDevelopmentInProgress(context);
                           },
                           child: const Text('立即注册'),
                         ),

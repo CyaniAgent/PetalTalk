@@ -53,20 +53,22 @@ class _UiMainFrameState extends State<UiMainFrame> {
                 NavigationRail(
                   backgroundColor: Colors.transparent,
                   selectedIndex: _mainController.selectedIndex,
-                  onDestinationSelected: (value) => _mainController.setSelectedIndex(value),
+                  onDestinationSelected: (value) =>
+                      _mainController.setSelectedIndex(value),
                   labelType: NavigationRailLabelType.all,
                   destinations: _mainController.navigationBars.map((e) {
                     return NavigationRailDestination(
                       icon: Badge(
-                        label: _mainController.dynamicBadgeType.value ==
+                        label:
+                            _mainController.dynamicBadgeType.value ==
                                 DynamicBadgeMode.number
                             ? Text(e['count'].toString())
                             : null,
                         padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
                         isLabelVisible:
                             _mainController.dynamicBadgeType.value !=
-                                    DynamicBadgeMode.hidden &&
-                                e['count'] > 0,
+                                DynamicBadgeMode.hidden &&
+                            e['count'] > 0,
                         child: e['icon'],
                       ),
                       selectedIcon: e['selectIcon'],
@@ -83,7 +85,8 @@ class _UiMainFrameState extends State<UiMainFrame> {
                         Align(
                           alignment: Alignment.topLeft,
                           child: Opacity(
-                            opacity: Theme.of(context).brightness == Brightness.dark
+                            opacity:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? 0.3
                                 : 0.6,
                             child: Container(
@@ -91,20 +94,19 @@ class _UiMainFrameState extends State<UiMainFrame> {
                               height: double.infinity,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                    colors: [
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.7),
-                                      Theme.of(context).colorScheme.surface,
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .surface
-                                          .withOpacity(0.3),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    stops: const [0.1, 0.3, 5]),
+                                  colors: [
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.7),
+                                    Theme.of(context).colorScheme.surface,
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surface.withOpacity(0.3),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  stops: const [0.1, 0.3, 5],
+                                ),
                               ),
                             ),
                           ),
@@ -137,20 +139,19 @@ class _UiMainFrameState extends State<UiMainFrame> {
                         height: MediaQuery.of(context).size.height,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.7),
-                                Theme.of(context).colorScheme.surface,
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surface
-                                    .withOpacity(0.3),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: const [0.1, 0.3, 5]),
+                            colors: [
+                              Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.7),
+                              Theme.of(context).colorScheme.surface,
+                              Theme.of(
+                                context,
+                              ).colorScheme.surface.withOpacity(0.3),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.1, 0.3, 5],
+                          ),
                         ),
                       ),
                     ),
@@ -166,44 +167,47 @@ class _UiMainFrameState extends State<UiMainFrame> {
                 ),
               ],
             ),
-        // 窄屏时显示底部导航栏
-        bottomNavigationBar: !isWideScreen &&
-                _mainController.navigationBars.length > 1
-            ? StreamBuilder(
-                stream: _mainController.bottomBarStream.stream.distinct(),
-                initialData: true,
-                builder: (context, AsyncSnapshot snapshot) {
-                  return AnimatedSlide(
-                    curve: Curves.easeInOutCubicEmphasized,
-                    duration: const Duration(milliseconds: 500),
-                    offset: Offset(0, snapshot.data ? 0 : 1),
-                    child: NavigationBar(
-                      onDestinationSelected: (value) => _mainController.setSelectedIndex(value),
-                      selectedIndex: _mainController.selectedIndex,
-                      destinations: <Widget>[
-                        ..._mainController.navigationBars.map((e) {
-                          return NavigationDestination(
-                            icon: Badge(
-                              label: _mainController.dynamicBadgeType.value ==
-                                      DynamicBadgeMode.number
-                                  ? Text(e['count'].toString())
-                                  : null,
-                              padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
-                              isLabelVisible:_mainController.dynamicBadgeType.value !=
-                                          DynamicBadgeMode.hidden &&
-                                      e['count'] > 0,
-                              child: e['icon'],
-                            ),
-                            selectedIcon: e['selectIcon'],
-                            label: e['label'],
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  );
-                },
-              )
-            : null,
+      // 窄屏时显示底部导航栏
+      bottomNavigationBar:
+          !isWideScreen && _mainController.navigationBars.length > 1
+          ? StreamBuilder(
+              stream: _mainController.bottomBarStream.stream.distinct(),
+              initialData: true,
+              builder: (context, AsyncSnapshot snapshot) {
+                return AnimatedSlide(
+                  curve: Curves.easeInOutCubicEmphasized,
+                  duration: const Duration(milliseconds: 500),
+                  offset: Offset(0, snapshot.data ? 0 : 1),
+                  child: NavigationBar(
+                    onDestinationSelected: (value) =>
+                        _mainController.setSelectedIndex(value),
+                    selectedIndex: _mainController.selectedIndex,
+                    destinations: <Widget>[
+                      ..._mainController.navigationBars.map((e) {
+                        return NavigationDestination(
+                          icon: Badge(
+                            label:
+                                _mainController.dynamicBadgeType.value ==
+                                    DynamicBadgeMode.number
+                                ? Text(e['count'].toString())
+                                : null,
+                            padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
+                            isLabelVisible:
+                                _mainController.dynamicBadgeType.value !=
+                                    DynamicBadgeMode.hidden &&
+                                e['count'] > 0,
+                            child: e['icon'],
+                          ),
+                          selectedIcon: e['selectIcon'],
+                          label: e['label'],
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                );
+              },
+            )
+          : null,
     );
   }
 }

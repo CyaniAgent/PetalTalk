@@ -75,7 +75,7 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
                 children: [
                   // 应用标题
                   Text(
-                    'Flarum 客户端',
+                    'PetalTalk',
                     style: Theme.of(context).textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
@@ -94,7 +94,7 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
                     enabled: _canSelectEndpoint,
                     decoration: InputDecoration(
                       labelText: 'Flarum 端点 URL',
-                      hintText: '例如: https://flarum.example.com',
+                      hintText: '例如: https://flarum.sorange.top',
                       prefixIcon: const Icon(Icons.link),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),

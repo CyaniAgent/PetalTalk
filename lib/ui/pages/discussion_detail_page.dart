@@ -6,6 +6,7 @@ import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
 import '../../api/models/post.dart';
 import '../../utils/time_formatter.dart';
+import '../../utils/snackbar_utils.dart';
 import '../widgets/post_content.dart';
 import '../widgets/reply_input.dart';
 
@@ -53,11 +54,16 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
 
   // 加载主题帖详情
   Future<void> _loadDiscussionDetail(String id) async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     final result = await _discussionService.getDiscussion(id);
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
@@ -76,11 +82,16 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
 
   // 加载帖子列表
   Future<void> _loadPosts() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     final result = await _postService.getPostsForDiscussion(_discussion.id);
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
@@ -120,18 +131,79 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
     }
   }
 
+  // 显示底部回复输入框
+  void _showReplyBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '写下你的回复',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 回复输入框
+              ReplyInput(
+                onSubmit: () {
+                  // 提交回复后关闭弹窗
+                  Navigator.pop(context);
+                  _handleReply();
+                },
+                onContentChanged: (content) {
+                  setState(() {
+                    _replyContent = content;
+                  });
+                },
+                initialContent: _replyContent,
+                isSubmitting: _isSubmittingReply,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // 处理回复
   Future<void> _handleReply() async {
     if (_replyContent.isEmpty) return;
 
-    setState(() {
-      _isSubmittingReply = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isSubmittingReply = true;
+      });
+    }
 
     final result = await _postService.replyToDiscussion(
       discussionId: _discussion.id,
       content: _replyContent,
     );
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
 
     setState(() {
       _isSubmittingReply = false;
@@ -191,7 +263,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
             icon: const Icon(Icons.more_vert),
             onPressed: () {
               // 更多操作
-              Get.snackbar('提示', '功能开发中', snackPosition: SnackPosition.BOTTOM);
+              SnackbarUtils.showDevelopmentInProgress(context);
             },
           ),
         ],
@@ -260,7 +332,9 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                               ).textTheme.bodyMedium,
                                       ),
                                       Text(
-                                        TimeFormatter.formatLocalTime(post.createdAt),
+                                        TimeFormatter.formatLocalTime(
+                                          post.createdAt,
+                                        ),
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodySmall,
@@ -308,14 +382,12 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.favorite),
+                                    icon: const Icon(Icons.thumb_up),
                                     iconSize: isFirstPost ? 20 : 18,
                                     onPressed: () {
                                       // 点赞
-                                      Get.snackbar(
-                                        '提示',
-                                        '功能开发中',
-                                        snackPosition: SnackPosition.BOTTOM,
+                                      SnackbarUtils.showDevelopmentInProgress(
+                                        context,
                                       );
                                     },
                                   ),
@@ -325,10 +397,8 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                     iconSize: isFirstPost ? 20 : 18,
                                     onPressed: () {
                                       // 回复
-                                      Get.snackbar(
-                                        '提示',
-                                        '功能开发中',
-                                        snackPosition: SnackPosition.BOTTOM,
+                                      SnackbarUtils.showDevelopmentInProgress(
+                                        context,
                                       );
                                     },
                                   ),
@@ -339,10 +409,8 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                       iconSize: 20,
                                       onPressed: () {
                                         // 分享
-                                        Get.snackbar(
-                                          '提示',
-                                          '功能开发中',
-                                          snackPosition: SnackPosition.BOTTOM,
+                                        SnackbarUtils.showDevelopmentInProgress(
+                                          context,
                                         );
                                       },
                                     ),
@@ -355,20 +423,16 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                     },
                   ),
                 ),
-                // 回复输入框
-                if (_discussion.canReply && !_discussion.isLocked)
-                  ReplyInput(
-                    onSubmit: _handleReply,
-                    onContentChanged: (content) {
-                      setState(() {
-                        _replyContent = content;
-                      });
-                    },
-                    initialContent: _replyContent,
-                    isSubmitting: _isSubmittingReply,
-                  ),
               ],
             ),
+      // 回帖按钮，点击后从页面下方弹出发送框
+      floatingActionButton: _discussion.canReply && !_discussion.isLocked
+          ? FloatingActionButton(
+              onPressed: _showReplyBottomSheet,
+              child: const Icon(Icons.comment),
+              tooltip: '回复',
+            )
+          : null,
     );
   }
 }

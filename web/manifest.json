@@ -1,6 +1,6 @@
 {
-    "name": "flarum_app",
-    "short_name": "flarum_app",
+    "name": "PetalTalk",
+    "short_name": "PetalTalk",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -47,9 +47,7 @@ class NotificationItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: isRead ? null : Theme.of(context).colorScheme.surfaceVariant,
       child: InkWell(
         onTap: onTap,
@@ -80,10 +78,7 @@ class NotificationItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 标题
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
+                    Text(title, style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 4),
                     // 内容
                     Text(

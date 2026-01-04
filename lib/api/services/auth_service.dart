@@ -46,12 +46,12 @@ class AuthService {
       print('Login DioException: ${e.response?.statusCode}');
       print('Login DioException data: ${e.response?.data}');
       print('Login DioException message: ${e.message}');
-      
+
       // 即使发生异常，也要检查响应数据中是否包含token
       if (e.response?.data != null && e.response?.data['token'] != null) {
         final token = e.response?.data['token'];
         final userId = e.response?.data['userId'];
-        
+
         // 保存令牌到内存
         if (token != null) {
           _api.setToken(token);
@@ -64,7 +64,7 @@ class AuthService {
 
         return {'token': token, 'userId': userId};
       }
-      
+
       return null;
     } catch (e) {
       print('Login error: $e');

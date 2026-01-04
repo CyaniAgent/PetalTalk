@@ -137,16 +137,23 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     elevation: 2,
-                    child: ListTile(
-                      onTap: () {
-                        // 跳转到对应设置页面
-                        if (item.containsKey('route') && item['route'] != null) {
-                          Get.toNamed(item['route']);
-                        }
-                      },
-                      leading: Icon(item['icon']),
-                      title: Text(item['title']),
-                      trailing: const Icon(Icons.chevron_right),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          onTap: () {
+                            // 跳转到一个新页面，显示该项的内容
+                            Get.to(
+                              () => Scaffold(
+                                appBar: AppBar(title: Text(item['title'])),
+                                body: item['content'],
+                              ),
+                            );
+                          },
+                          leading: Icon(item['icon']),
+                          title: Text(item['title']),
+                          trailing: const Icon(Icons.chevron_right),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),
@@ -170,7 +177,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   elevation: 2,
                   child: ListTile(
-                    onTap: widget.onAbout != null ? widget.onAbout : () => Get.snackbar('提示', '关于'),
+                    onTap: widget.onAbout != null ? widget.onAbout : () => Get.toNamed('/about'),
                     leading: const Icon(Icons.info_outlined),
                     title: const Text('关于'),
                   ),
