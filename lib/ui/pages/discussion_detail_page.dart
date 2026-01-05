@@ -11,7 +11,7 @@ import '../widgets/post_content.dart';
 import '../widgets/reply_input.dart';
 
 class DiscussionDetailPage extends StatefulWidget {
-  const DiscussionDetailPage({Key? key}) : super(key: key);
+  const DiscussionDetailPage({super.key});
 
   @override
   State<DiscussionDetailPage> createState() => _DiscussionDetailPageState();
@@ -357,9 +357,10 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.1),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
@@ -429,8 +430,8 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       floatingActionButton: _discussion.canReply && !_discussion.isLocked
           ? FloatingActionButton(
               onPressed: _showReplyBottomSheet,
-              child: const Icon(Icons.comment),
               tooltip: '回复',
+              child: const Icon(Icons.comment),
             )
           : null,
     );

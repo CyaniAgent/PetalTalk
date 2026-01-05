@@ -5,7 +5,7 @@ import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();

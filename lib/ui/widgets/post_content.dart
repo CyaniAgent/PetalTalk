@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 class PostContent extends StatelessWidget {
   final String contentHtml;
 
-  const PostContent({Key? key, required this.contentHtml}) : super(key: key);
+  const PostContent({super.key, required this.contentHtml});
 
   @override
   Widget build(BuildContext context) {

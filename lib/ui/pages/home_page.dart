@@ -10,7 +10,7 @@ import '../widgets/ui_main_frame.dart';
 
 // 主题帖列表组件
 class DiscussionList extends StatefulWidget {
-  const DiscussionList({Key? key}) : super(key: key);
+  const DiscussionList({super.key});
 
   @override
   State<DiscussionList> createState() => _DiscussionListState();

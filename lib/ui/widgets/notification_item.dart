@@ -10,7 +10,7 @@ class NotificationItem extends StatelessWidget {
   final VoidCallback onMarkAsRead;
 
   const NotificationItem({
-    Key? key,
+    super.key,
     required this.type,
     required this.title,
     required this.content,
@@ -18,7 +18,7 @@ class NotificationItem extends StatelessWidget {
     required this.isRead,
     required this.onTap,
     required this.onMarkAsRead,
-  }) : super(key: key);
+  });
 
   // 根据通知类型获取图标
   IconData _getNotificationIcon() {
@@ -48,7 +48,7 @@ class NotificationItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: isRead ? null : Theme.of(context).colorScheme.surfaceVariant,
+      color: isRead ? null : Theme.of(context).colorScheme.surfaceContainerHighest,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -62,7 +62,7 @@ class NotificationItem extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

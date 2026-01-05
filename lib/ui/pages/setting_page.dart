@@ -7,7 +7,7 @@ import '../widgets/setting_page.dart';
 import '../../api/services/auth_service.dart';
 
 class SettingPage extends StatefulWidget {
-  const SettingPage({Key? key}) : super(key: key);
+  const SettingPage({super.key});
 
   @override
   State<SettingPage> createState() => _SettingPageState();
@@ -24,11 +24,29 @@ class _SettingPageState extends State<SettingPage> {
     _loadCurrentSettings();
   }
 
+  // 更多设置状态
+  bool _useDynamicColor = true;
+  String _accentColor = 'blue';
+  double _fontSize = 16.0;
+  bool _compactLayout = false;
+  bool _showAvatars = true;
+
   // 加载当前设置
   Future<void> _loadCurrentSettings() async {
     final themeMode = await _appearanceService.loadThemeMode();
+    final useDynamicColor = await _appearanceService.loadUseDynamicColor();
+    final accentColor = await _appearanceService.loadAccentColor();
+    final fontSize = await _appearanceService.loadFontSize();
+    final compactLayout = await _appearanceService.loadCompactLayout();
+    final showAvatars = await _appearanceService.loadShowAvatars();
+
     setState(() {
       _isDarkMode = themeMode != ThemeMode.light;
+      _useDynamicColor = useDynamicColor;
+      _accentColor = accentColor;
+      _fontSize = fontSize;
+      _compactLayout = compactLayout;
+      _showAvatars = showAvatars;
     });
   }
 
@@ -40,6 +58,154 @@ class _SettingPageState extends State<SettingPage> {
       _isDarkMode = value;
     });
     Get.changeThemeMode(themeMode);
+  }
+
+  // 切换动态色彩
+  Future<void> _toggleDynamicColor(bool value) async {
+    await _appearanceService.saveUseDynamicColor(value);
+    setState(() {
+      _useDynamicColor = value;
+    });
+    // 重新加载主题设置
+    _loadThemeSettings();
+  }
+
+  // 切换紧凑布局
+  Future<void> _toggleCompactLayout(bool value) async {
+    await _appearanceService.saveCompactLayout(value);
+    setState(() {
+      _compactLayout = value;
+    });
+  }
+
+  // 切换显示头像
+  Future<void> _toggleShowAvatars(bool value) async {
+    await _appearanceService.saveShowAvatars(value);
+    setState(() {
+      _showAvatars = value;
+    });
+  }
+
+  // 更新强调色
+  Future<void> _updateAccentColor(String value) async {
+    await _appearanceService.saveAccentColor(value);
+    setState(() {
+      _accentColor = value;
+    });
+    // 重新加载主题设置
+    _loadThemeSettings();
+  }
+
+  // 更新字体大小
+  Future<void> _updateFontSize(double value) async {
+    await _appearanceService.saveFontSize(value);
+    setState(() {
+      _fontSize = value;
+    });
+  }
+
+  // 重新加载主题设置并重启应用
+  Future<void> _loadThemeSettings() async {
+    // 重新加载主题设置
+    final themeMode = await _appearanceService.loadThemeMode();
+    // 这里可以添加重启应用的逻辑，或者通过GetX刷新当前页面
+    Get.changeThemeMode(themeMode);
+    // 通知应用主题已更改
+    Get.forceAppUpdate();
+  }
+
+  // 根据字符串获取强调色
+  Color _getAccentColor(String colorName) {
+    switch (colorName.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'pink':
+        return Colors.pink;
+      case 'purple':
+        return Colors.purple;
+      case 'indigo':
+        return Colors.indigo;
+      case 'blue':
+        return Colors.blue;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'green':
+        return Colors.green;
+      case 'lime':
+        return Colors.lime;
+      case 'yellow':
+        return Colors.yellow;
+      case 'amber':
+        return Colors.amber;
+      case 'orange':
+        return Colors.orange;
+      case 'deeporange':
+        return Colors.deepOrange;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  // 显示强调色选择对话框
+  void _showAccentColorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('选择强调色'),
+          content: SizedBox(
+            width: 200,
+            height: 250,
+            child: GridView.count(
+              crossAxisCount: 4,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              children: [
+                _buildColorOption('red', Colors.red),
+                _buildColorOption('pink', Colors.pink),
+                _buildColorOption('purple', Colors.purple),
+                _buildColorOption('indigo', Colors.indigo),
+                _buildColorOption('blue', Colors.blue),
+                _buildColorOption('cyan', Colors.cyan),
+                _buildColorOption('teal', Colors.teal),
+                _buildColorOption('green', Colors.green),
+                _buildColorOption('lime', Colors.lime),
+                _buildColorOption('yellow', Colors.yellow),
+                _buildColorOption('amber', Colors.amber),
+                _buildColorOption('orange', Colors.orange),
+                _buildColorOption('deeporange', Colors.deepOrange),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 构建颜色选择项
+  Widget _buildColorOption(String colorName, Color color) {
+    final isSelected = _accentColor == colorName;
+    return GestureDetector(
+      onTap: () {
+        _updateAccentColor(colorName);
+        Navigator.pop(context);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.transparent,
+            width: isSelected ? 3 : 0,
+          ),
+        ),
+        child: isSelected
+            ? const Icon(Icons.check, color: Colors.white, size: 24)
+            : null,
+      ),
+    );
   }
 
   @override
@@ -133,6 +299,53 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('开启或关闭深色主题'),
               value: _isDarkMode,
               onChanged: _toggleDarkMode,
+            ),
+            SwitchListTile(
+              title: const Text('动态色彩'),
+              subtitle: const Text('使用系统动态色彩主题 (Material Design 3)'),
+              value: _useDynamicColor,
+              onChanged: _toggleDynamicColor,
+            ),
+            ListTile(
+              title: const Text('强调色'),
+              subtitle: const Text('选择应用的主题色'),
+              trailing: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _getAccentColor(_accentColor),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+              ),
+              onTap: () => _showAccentColorDialog(),
+            ),
+            ListTile(
+              title: const Text('字体大小'),
+              subtitle: Text('当前大小: ${_fontSize.toStringAsFixed(1)}'),
+              trailing: SizedBox(
+                width: 200,
+                child: Slider(
+                  value: _fontSize,
+                  min: 12.0,
+                  max: 24.0,
+                  divisions: 24,
+                  label: _fontSize.toStringAsFixed(1),
+                  onChanged: _updateFontSize,
+                ),
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('紧凑布局'),
+              subtitle: const Text('减少元素间距，显示更多内容'),
+              value: _compactLayout,
+              onChanged: _toggleCompactLayout,
+            ),
+            SwitchListTile(
+              title: const Text('显示头像'),
+              subtitle: const Text('在主题帖和回复中显示用户头像'),
+              value: _showAvatars,
+              onChanged: _toggleShowAvatars,
             ),
           ],
         ),

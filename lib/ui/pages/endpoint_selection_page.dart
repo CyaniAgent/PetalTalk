@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import '../../api/flarum_api.dart';
 
 class EndpointSelectionPage extends StatefulWidget {
-  const EndpointSelectionPage({Key? key}) : super(key: key);
+  const EndpointSelectionPage({super.key});
 
   @override
   State<EndpointSelectionPage> createState() => _EndpointSelectionPageState();

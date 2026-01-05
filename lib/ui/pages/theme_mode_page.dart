@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../services/appearance_service.dart';
 
 class ThemeModePage extends StatefulWidget {
-  const ThemeModePage({Key? key}) : super(key: key);
+  const ThemeModePage({super.key});
 
   @override
   State<ThemeModePage> createState() => _ThemeModePageState();

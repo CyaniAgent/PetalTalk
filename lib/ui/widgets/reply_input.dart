@@ -7,12 +7,12 @@ class ReplyInput extends StatefulWidget {
   final bool isSubmitting;
 
   const ReplyInput({
-    Key? key,
+    super.key,
     required this.onSubmit,
     required this.onContentChanged,
     this.initialContent = '',
     this.isSubmitting = false,
-  }) : super(key: key);
+  });
 
   @override
   State<ReplyInput> createState() => _ReplyInputState();

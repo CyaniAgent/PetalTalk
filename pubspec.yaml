@@ -1,38 +1,35 @@
 name: petal_talk
 description: "PetalTalk - A beautiful Flarum community client."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: "none" # Remove this line if you wish to publish to pub.dev
+# 以下行防止包被意外发布到pub.dev，使用`flutter pub publish`命令。这对于私有包来说是首选的。
+publish_to: "none" # 如果你想发布到pub.dev，请删除这一行
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
+# 以下定义了应用程序的版本和构建号。
+# 版本号是由点分隔的三个数字，如1.2.43
+# 后面可以跟一个由+分隔的可选构建号。
+# 在Flutter构建中，可以分别通过指定--build-name和--build-number来覆盖版本和构建号。
+# 在Android中，build-name用作versionName，而build-number用作versionCode。
+# 有关Android版本控制的更多信息，请访问https://developer.android.com/studio/publish/versioning
+# 在iOS中，build-name用作CFBundleShortVersionString，而build-number用作CFBundleVersion。
+# 有关iOS版本控制的更多信息，请访问
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+# 在Windows中，build-name用作产品版本和文件版本的主要、次要和补丁部分，
+# 而build-number用作构建后缀。
+version: 0.0.1+10
 
 environment:
   sdk: ^3.10.4
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
+# 依赖项指定了你的包工作所需的其他包。
+# 要自动将包依赖项升级到最新版本，
+# 请考虑运行`flutter pub upgrade --major-versions`。或者，
+# 可以通过将下面的版本号更改为pub.dev上可用的最新版本来手动更新依赖项。
+# 要查看哪些依赖项有可用的新版本，请运行`flutter pub outdated`。
 dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # 以下将Cupertino Icons字体添加到您的应用程序中。
+  # 与CupertinoIcons类一起使用，用于iOS风格的图标。
   cupertino_icons: ^1.0.8
   get: ^4.6.5
 
@@ -56,7 +53,7 @@ dependencies:
   # 解决sliver滑动不同步
   extended_nested_scroll_view: ^6.2.1
   # 上拉加载
-  loading_more_list: ^6.0.0
+  loading_more_list: ^7.1.0
   # 下拉刷新
   pull_to_refresh_notification: ^3.0.1
 
@@ -66,7 +63,7 @@ dependencies:
   dismissible_page: ^1.0.2
   custom_sliding_segmented_control: ^1.8.3
   # 权限
-  permission_handler: ^11.3.0
+  permission_handler: ^12.0.1
   # 动态取色
   dynamic_color: ^1.7.0
 
@@ -74,7 +71,7 @@ dependencies:
   dio: ^5.4.1
   cookie_jar: ^4.0.8
   dio_cookie_manager: ^3.1.1
-  connectivity_plus: ^6.0.3
+  connectivity_plus: ^7.0.0
   dio_http2_adapter: ^2.3.1+1
   # 本地存储
   shared_preferences: ^2.2.3
@@ -83,45 +80,41 @@ dependencies:
   # 链接打开
   url_launcher: ^6.2.5
   # 自定义窗口标题栏
-  window_manager: ^0.3.1
+  window_manager: ^0.5.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
+  # 下面的"flutter_lints"包包含了一组推荐的lints，
+  # 用于鼓励良好的编码实践。该包提供的lint集在位于您的包根目录的
+  # `analysis_options.yaml`文件中激活。有关禁用特定lint规则和激活其他规则的信息，
+  # 请参阅该文件。
   flutter_lints: ^6.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+# 有关此文件的通用Dart部分的信息，请参阅以下页面：https://dart.dev/tools/pub/pubspec
 
-# The following section is specific to Flutter packages.
+# 以下部分特定于Flutter包。
 flutter:
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+  # 以下行确保Material Icons字体包含在您的应用程序中，
+  # 以便您可以在material Icons类中使用这些图标。
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # 资源目录
+  assets:
+    - assets/
+    - assets/icons/
+    - assets/icons/logo.png
 
-  # An image asset can refer to one or more resolution-specific "variants", see
+  # 图片资源可以引用一个或多个特定分辨率的"变体"，请参阅
   # https://flutter.dev/to/resolution-aware-images
 
-  # For details regarding adding assets from package dependencies, see
+  # 有关从包依赖项添加资源的详细信息，请参阅
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
+  # 要向应用程序添加自定义字体，请在此处的"flutter"部分添加一个fonts部分。
+  # 此列表中的每个条目都应包含一个带有字体系列名称的"family"键，以及一个带有
+  # 字体资产和其他描述符列表的"fonts"键。例如：
   # fonts:
   #   - family: Schyler
   #     fonts:
@@ -134,5 +127,5 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # 有关包依赖项字体的详细信息，
+  # 请参阅https://flutter.dev/to/font-from-package

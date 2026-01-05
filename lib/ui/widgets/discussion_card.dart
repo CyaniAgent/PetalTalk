@@ -13,7 +13,7 @@ class DiscussionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const DiscussionCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.author,
     required this.createdAt,
@@ -23,7 +23,7 @@ class DiscussionCard extends StatelessWidget {
     required this.isLocked,
     required this.tags,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +84,7 @@ class DiscussionCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.1),
+                          ).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

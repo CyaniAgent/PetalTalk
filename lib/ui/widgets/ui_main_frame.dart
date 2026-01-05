@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -11,10 +9,10 @@ class UiMainFrame extends StatefulWidget {
   final bool enableGradientBg;
 
   const UiMainFrame({
-    Key? key,
+    super.key,
     required this.navItems,
     this.enableGradientBg = false,
-  }) : super(key: key);
+  });
 
   @override
   State<UiMainFrame> createState() => _UiMainFrameState();
@@ -28,7 +26,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
     super.initState();
     // 初始化控制器
     _mainController = Get.put(UiMainController());
-    _mainController.enableGradientBg = widget.enableGradientBg;
+    _mainController.enableGradientBg.value = widget.enableGradientBg;
     // 设置导航栏配置
     _mainController.setNavBarConfig(widget.navItems);
   }
@@ -52,7 +50,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                 // 侧边栏
                 NavigationRail(
                   backgroundColor: Colors.transparent,
-                  selectedIndex: _mainController.selectedIndex,
+                  selectedIndex: _mainController.selectedIndex.value,
                   onDestinationSelected: (value) =>
                       _mainController.setSelectedIndex(value),
                   labelType: NavigationRailLabelType.all,
@@ -81,7 +79,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                 Expanded(
                   child: Stack(
                     children: [
-                      if (_mainController.enableGradientBg)
+                      if (_mainController.enableGradientBg.value)
                         Align(
                           alignment: Alignment.topLeft,
                           child: Opacity(
@@ -95,13 +93,11 @@ class _UiMainFrameState extends State<UiMainFrame> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.7),
+                                    Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.7),
                                     Theme.of(context).colorScheme.surface,
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.surface.withOpacity(0.3),
+                                    Theme.of(context).colorScheme.surface
+                                        .withValues(alpha: 0.3),
                                   ],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
@@ -115,7 +111,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                         physics: const NeverScrollableScrollPhysics(),
                         controller: _mainController.pageController,
                         onPageChanged: (index) {
-                          _mainController.selectedIndex = index;
+                          _mainController.selectedIndex.value = index;
                           setState(() {});
                         },
                         children: _mainController.pages,
@@ -127,7 +123,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
             )
           : Stack(
               children: [
-                if (_mainController.enableGradientBg)
+                if (_mainController.enableGradientBg.value)
                   Align(
                     alignment: Alignment.topLeft,
                     child: Opacity(
@@ -142,11 +138,11 @@ class _UiMainFrameState extends State<UiMainFrame> {
                             colors: [
                               Theme.of(
                                 context,
-                              ).colorScheme.primary.withOpacity(0.7),
+                              ).colorScheme.primary.withValues(alpha: 0.7),
                               Theme.of(context).colorScheme.surface,
                               Theme.of(
                                 context,
-                              ).colorScheme.surface.withOpacity(0.3),
+                              ).colorScheme.surface.withValues(alpha: 0.3),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -160,7 +156,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _mainController.pageController,
                   onPageChanged: (index) {
-                    _mainController.selectedIndex = index;
+                    _mainController.selectedIndex.value = index;
                     setState(() {});
                   },
                   children: _mainController.pages,
@@ -181,7 +177,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                   child: NavigationBar(
                     onDestinationSelected: (value) =>
                         _mainController.setSelectedIndex(value),
-                    selectedIndex: _mainController.selectedIndex,
+                    selectedIndex: _mainController.selectedIndex.value,
                     destinations: <Widget>[
                       ..._mainController.navigationBars.map((e) {
                         return NavigationDestination(
@@ -201,7 +197,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                           selectedIcon: e['selectIcon'],
                           label: e['label'],
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 );

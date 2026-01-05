@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../api/services/discussion_service.dart';
 
 class CreateDiscussionPage extends StatefulWidget {
-  const CreateDiscussionPage({Key? key}) : super(key: key);
+  const CreateDiscussionPage({super.key});
 
   @override
   State<CreateDiscussionPage> createState() => _CreateDiscussionPageState();

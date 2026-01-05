@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AboutPage extends StatelessWidget {
-  const AboutPage({Key? key}) : super(key: key);
+  const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,10 +14,9 @@ class AboutPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 应用图标
-              const CircleAvatar(
-                radius: 64,
-                backgroundColor: Colors.blue,
-                child: Icon(Icons.forum, size: 64, color: Colors.white),
+              CircleAvatar(
+                radius: 128,
+                backgroundImage: const AssetImage('assets/icons/logo.png'),
               ),
               const SizedBox(height: 24),
 
