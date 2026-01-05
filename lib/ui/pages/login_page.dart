@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/services/auth_service.dart';
+import '../../api/request/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 
 class LoginPage extends StatefulWidget {

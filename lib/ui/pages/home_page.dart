@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/services/discussion_service.dart';
+import '../../api/request/discussion_service.dart';
 import '../../api/models/discussion.dart';
-import '../../api/services/auth_service.dart';
+import '../../api/request/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../widgets/discussion_card.dart';
 import '../widgets/ui_main_frame.dart';

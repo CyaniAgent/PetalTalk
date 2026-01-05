@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/services/post_service.dart';
-import '../../api/services/discussion_service.dart';
+import '../../api/request/post_service.dart';
+import '../../api/request/discussion_service.dart';
 import '../../api/models/discussion.dart';
 import '../../api/models/post.dart';
 import '../../utils/time_formatter.dart';

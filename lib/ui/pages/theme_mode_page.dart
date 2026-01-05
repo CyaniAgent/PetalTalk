@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../services/appearance_service.dart';
+import '../../global_services/appearance_service.dart';
 
 class ThemeModePage extends StatefulWidget {
   const ThemeModePage({super.key});

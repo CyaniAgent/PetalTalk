@@ -3,7 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../models/dynamic_badge_mode.dart';
+// 动态徽章模式枚举
+enum DynamicBadgeMode { hidden, point, number }
+
+extension DynamicBadgeModeDesc on DynamicBadgeMode {
+  String get description => ['隐藏', '红点', '数字'][index];
+}
+
+extension DynamicBadgeModeCode on DynamicBadgeMode {
+  int get code => [0, 1, 2][index];
+}
 
 class UiMainController extends GetxController {
   RxList<Widget> pages = <Widget>[].obs;

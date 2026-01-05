@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import './appearance_service.dart';
 
-/// 主题服务类，封装了主题相关的配置和操作
 class ThemeService {
   final AppearanceService _appearanceService = AppearanceService();
 
   /// 获取强调色
-  Color _getAccentColor(String accentColorName) {
+  Color getAccentColor(String accentColorName) {
     switch (accentColorName.toLowerCase()) {
       case 'red':
         return Colors.red;
@@ -44,7 +43,7 @@ class ThemeService {
   Future<ThemeData> createLightTheme(ColorScheme? lightDynamic) async {
     final useDynamicColor = await _appearanceService.loadUseDynamicColor();
     final accentColorName = await _appearanceService.loadAccentColor();
-    final accentColor = _getAccentColor(accentColorName);
+    final accentColor = getAccentColor(accentColorName);
 
     final colorScheme = useDynamicColor && lightDynamic != null
         ? lightDynamic
@@ -63,7 +62,7 @@ class ThemeService {
   Future<ThemeData> createDarkTheme(ColorScheme? darkDynamic) async {
     final useDynamicColor = await _appearanceService.loadUseDynamicColor();
     final accentColorName = await _appearanceService.loadAccentColor();
-    final accentColor = _getAccentColor(accentColorName);
+    final accentColor = getAccentColor(accentColorName);
 
     final colorScheme = useDynamicColor && darkDynamic != null
         ? darkDynamic
@@ -81,13 +80,13 @@ class ThemeService {
     );
   }
 
-  /// 加载主题模式
+  // 加载主题模式
   Future<ThemeMode> loadThemeMode() async {
     return await _appearanceService.loadThemeMode();
   }
 
-  /// 保存主题模式
-  Future<void> saveThemeMode(ThemeMode mode) async {
-    await _appearanceService.saveThemeMode(mode);
+  // 保存主题模式
+  Future<void> saveThemeMode(ThemeMode themeMode) async {
+    await _appearanceService.saveThemeMode(themeMode);
   }
 }

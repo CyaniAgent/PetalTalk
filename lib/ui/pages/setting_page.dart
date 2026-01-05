@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../services/appearance_service.dart';
+import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../widgets/setting_page.dart';
-import '../../api/services/auth_service.dart';
+import '../../api/request/auth_service.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});

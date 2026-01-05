@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/setting_controller.dart';
+import '../pages/state/setting_state.dart';
 
 class UiSettingPage extends StatefulWidget {
   final List<Map<String, dynamic>> settingItems;

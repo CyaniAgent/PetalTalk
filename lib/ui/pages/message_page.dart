@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/services/notification_service.dart';
+import '../../api/request/notification_service.dart';
 import '../../api/models/notification.dart' as flarum_notification;
 import '../widgets/notification_item.dart';
 
