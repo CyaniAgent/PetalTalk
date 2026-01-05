@@ -42,7 +42,7 @@ dependencies:
   # 展开/收起
   expandable: ^5.0.1
   # 高帧率
-  flutter_displaymode: ^0.6.0
+  flutter_displaymode: ^0.7.0
   # scheme跳转
   appscheme: ^1.0.8
   # cookie 管理
