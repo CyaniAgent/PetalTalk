@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../flarum_api.dart';
+import '../../config/constants.dart';
 
 class AuthService {
   final FlarumApi _api = FlarumApi();
-  static const String _tokenKey = 'flarum_token';
-  static const String _userIdKey = 'flarum_user_id';
 
   // 登录
   Future<Map<String, dynamic>?> login({
@@ -33,8 +32,10 @@ class AuthService {
         _api.setToken(token);
 
         // 如果需要记住登录状态，保存到本地存储
-        if (remember) {
-          await _saveLoginInfo(token, userId);
+        if (remember && _api.baseUrl != null) {
+          await _api.saveToken(_api.baseUrl!, token);
+          // 保存用户ID，使用端点特定的键
+          await _saveUserId(_api.baseUrl!, userId);
         }
 
         return {'token': token, 'userId': userId};
@@ -56,8 +57,9 @@ class AuthService {
           _api.setToken(token);
 
           // 如果需要记住登录状态，保存到本地存储
-          if (remember && userId != null) {
-            await _saveLoginInfo(token, userId);
+          if (remember && _api.baseUrl != null && userId != null) {
+            await _api.saveToken(_api.baseUrl!, token);
+            await _saveUserId(_api.baseUrl!, userId);
           }
         }
 
@@ -73,26 +75,33 @@ class AuthService {
 
   // 从本地存储加载登录信息
   Future<void> loadLoginInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
-    if (token != null) {
-      _api.setToken(token);
-    }
+    // 登录信息的加载现在由FlarumApi.loadEndpoint()负责
+    // 这里不需要做任何事情，因为FlarumApi会在加载端点时自动加载对应端点的令牌
   }
 
-  // 保存登录信息到本地存储
-  Future<void> _saveLoginInfo(String token, dynamic userId) async {
+  // 保存用户ID到本地存储，使用端点特定的键
+  Future<void> _saveUserId(String endpoint, dynamic userId) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    final endpointHash = endpoint.hashCode.toString();
+    final userIdKey =
+        '${Constants.endpointDataPrefix}$endpointHash\_${Constants.userIdKey}';
     // 确保userId是字符串类型
-    await prefs.setString(_userIdKey, userId.toString());
+    await prefs.setString(userIdKey, userId.toString());
   }
 
   // 清除本地存储的登录信息
   Future<void> _clearLoginInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userIdKey);
+    if (_api.baseUrl != null) {
+      // 使用FlarumApi的方法清除当前端点的令牌
+      await _api.clearTokenForEndpoint(_api.baseUrl!);
+
+      // 清除用户ID
+      final prefs = await SharedPreferences.getInstance();
+      final endpointHash = _api.baseUrl!.hashCode.toString();
+      final userIdKey =
+          '${Constants.endpointDataPrefix}$endpointHash\_${Constants.userIdKey}';
+      await prefs.remove(userIdKey);
+    }
   }
 
   // 注销

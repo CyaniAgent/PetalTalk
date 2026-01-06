@@ -2,8 +2,10 @@
 enum Environment {
   /// 开发环境
   development,
+
   /// 测试环境
   staging,
+
   /// 生产环境
   production,
 }

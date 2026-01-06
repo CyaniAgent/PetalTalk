@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/time_formatter.dart';
 
 class DiscussionCard extends StatelessWidget {
+  final String id;
   final String title;
   final String author;
   final String createdAt;
@@ -14,6 +15,7 @@ class DiscussionCard extends StatelessWidget {
 
   const DiscussionCard({
     super.key,
+    required this.id,
     required this.title,
     required this.author,
     required this.createdAt,
@@ -43,12 +45,15 @@ class DiscussionCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
+                    child: Hero(
+                    tag: 'discussion-title-$id',
                     child: Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ),
                   ),
                   if (isSticky)
                     const Padding(

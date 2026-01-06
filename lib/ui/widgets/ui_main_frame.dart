@@ -34,16 +34,18 @@ class _UiMainFrameState extends State<UiMainFrame> {
   @override
   void initState() {
     super.initState();
-    // 初始化控制器
-    _mainController = Get.put(UiMainController());
+    // 查找或创建控制器，避免重复创建导致状态重置
+    _mainController = Get.isRegistered<UiMainController>() 
+        ? Get.find<UiMainController>() 
+        : Get.put(UiMainController());
     _mainController.enableGradientBg.value = widget.enableGradientBg;
-    // 设置导航栏配置
+    // 每次都设置导航栏配置，确保页面列表正确
     _mainController.setNavBarConfig(widget.navItems);
   }
 
   @override
   void dispose() {
-    Get.delete<UiMainController>();
+    // 不要删除控制器，避免窗口大小变化时状态重置
     super.dispose();
   }
 

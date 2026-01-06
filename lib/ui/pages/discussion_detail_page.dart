@@ -20,7 +20,7 @@ class DiscussionDetailPage extends StatefulWidget {
 class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
   final PostService _postService = PostService();
   final DiscussionService _discussionService = DiscussionService();
-  late Discussion _discussion;
+  Discussion? _discussion;
   final List<Post> _posts = [];
   bool _isLoading = false;
   bool _isSubmittingReply = false;
@@ -39,7 +39,9 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
     final arguments = Get.arguments;
     if (arguments != null && arguments is Discussion) {
       _discussion = arguments;
-      _loadPosts();
+      // 直接从ID获取主题帖详情，确保获取完整的标签信息
+      final id = _discussion!.id;
+      _loadDiscussionDetail(id);
     } else {
       // 如果没有传递主题帖数据，尝试从ID获取
       final id = Get.parameters['id'];
@@ -69,35 +71,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       _isLoading = false;
     });
 
-    if (result != null) {
-      setState(() {
-        _discussion = Discussion.fromJson(result['data']);
-      });
-      _loadPosts();
-    } else {
-      Get.snackbar('加载失败', '获取主题帖详情失败', snackPosition: SnackPosition.BOTTOM);
-      Get.back();
-    }
-  }
-
-  // 加载帖子列表
-  Future<void> _loadPosts() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    final result = await _postService.getPostsForDiscussion(_discussion.id);
-
-    // 检查组件是否仍然挂载
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (result != null) {
+    if (result != null && result.containsKey('data')) {
       // 处理included数据，获取用户和标签信息
       if (result.containsKey('included')) {
         final List<dynamic> included = result['included'];
@@ -114,6 +88,51 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
             final tagId = item['id'];
             final tagName = item['attributes']['name'];
             _tags[tagId] = tagName;
+          }
+        }
+      }
+      setState(() {
+        _discussion = Discussion.fromJson(result['data']);
+      });
+      _loadPosts();
+    } else {
+      Get.snackbar('加载失败', '获取主题帖详情失败', snackPosition: SnackPosition.BOTTOM);
+      Get.back();
+    }
+  }
+
+  // 加载帖子列表
+  Future<void> _loadPosts() async {
+    if (_discussion == null) return;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    final result = await _postService.getPostsForDiscussion(_discussion!.id);
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result != null) {
+      // 处理included数据，只获取用户信息，标签信息已经在_loadDiscussionDetail中获取
+      if (result.containsKey('included')) {
+        final List<dynamic> included = result['included'];
+        for (final item in included) {
+          if (item['type'] == 'users') {
+            final userId = item['id'];
+            final username = item['attributes']['username'];
+            final avatarUrl = item['attributes']['avatarUrl'];
+            _users[userId] = username;
+            if (avatarUrl != null) {
+              _userAvatars[userId] = avatarUrl;
+            }
           }
         }
       }
@@ -189,7 +208,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
 
   // 处理回复
   Future<void> _handleReply() async {
-    if (_replyContent.isEmpty) return;
+    if (_replyContent.isEmpty || _discussion == null) return;
 
     if (mounted) {
       setState(() {
@@ -198,7 +217,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
     }
 
     final result = await _postService.replyToDiscussion(
-      discussionId: _discussion.id,
+      discussionId: _discussion!.id,
       content: _replyContent,
     );
 
@@ -220,26 +239,26 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       // 更新主题帖的评论数
       setState(() {
         _discussion = Discussion(
-          id: _discussion.id,
-          title: _discussion.title,
-          slug: _discussion.slug,
-          commentCount: _discussion.commentCount + 1,
-          participantCount: _discussion.participantCount,
-          createdAt: _discussion.createdAt,
+          id: _discussion!.id,
+          title: _discussion!.title,
+          slug: _discussion!.slug,
+          commentCount: _discussion!.commentCount + 1,
+          participantCount: _discussion!.participantCount,
+          createdAt: _discussion!.createdAt,
           lastPostedAt: DateTime.now().toIso8601String(),
-          lastPostNumber: _discussion.lastPostNumber + 1,
-          canReply: _discussion.canReply,
-          canRename: _discussion.canRename,
-          canDelete: _discussion.canDelete,
-          canHide: _discussion.canHide,
-          isHidden: _discussion.isHidden,
-          isLocked: _discussion.isLocked,
-          isSticky: _discussion.isSticky,
-          subscription: _discussion.subscription,
-          userId: _discussion.userId,
+          lastPostNumber: _discussion!.lastPostNumber + 1,
+          canReply: _discussion!.canReply,
+          canRename: _discussion!.canRename,
+          canDelete: _discussion!.canDelete,
+          canHide: _discussion!.canHide,
+          isHidden: _discussion!.isHidden,
+          isLocked: _discussion!.isLocked,
+          isSticky: _discussion!.isSticky,
+          subscription: _discussion!.subscription,
+          userId: _discussion!.userId,
           lastPostedUserId: 'current_user_id', // 这里应该是当前用户ID
-          tagIds: _discussion.tagIds,
-          firstPostId: _discussion.firstPostId,
+          tagIds: _discussion!.tagIds,
+          firstPostId: _discussion!.firstPostId,
         );
       });
 
@@ -253,11 +272,16 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _discussion.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: _discussion != null
+            ? Hero(
+                tag: 'discussion-title-${_discussion!.id}',
+                child: Text(
+                  _discussion!.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            : Text('加载中...', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
@@ -268,7 +292,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           ),
         ],
       ),
-      body: _isLoading
+      body: _isLoading && _discussion == null
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
@@ -345,11 +369,14 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                               ),
                               const SizedBox(height: 16),
                               // 标签显示
-                              if (isFirstPost && _discussion.tagIds.isNotEmpty)
+                              if (isFirstPost &&
+                                  _discussion?.tagIds.isNotEmpty == true)
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: _discussion.tagIds.map((tagId) {
+                                  children: (_discussion?.tagIds ?? []).map((
+                                    tagId,
+                                  ) {
                                     final tagName = _tags[tagId] ?? '标签 $tagId';
                                     return Container(
                                       padding: const EdgeInsets.symmetric(
@@ -398,9 +425,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                     iconSize: isFirstPost ? 20 : 18,
                                     onPressed: () {
                                       // 回复
-                                      SnackbarUtils.showDevelopmentInProgress(
-                                        context,
-                                      );
+                                      _showReplyBottomSheet();
                                     },
                                   ),
                                   if (isFirstPost) const SizedBox(width: 16),
@@ -427,13 +452,15 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
               ],
             ),
       // 回帖按钮，点击后从页面下方弹出发送框
-      floatingActionButton: _discussion.canReply && !_discussion.isLocked
+      floatingActionButton:
+          _discussion != null && _discussion!.canReply && !_discussion!.isLocked
           ? FloatingActionButton(
               onPressed: _showReplyBottomSheet,
               tooltip: '回复',
               child: const Icon(Icons.comment),
             )
           : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

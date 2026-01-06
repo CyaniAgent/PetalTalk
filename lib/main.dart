@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api/flarum_api.dart';
 import 'api/request/auth_service.dart';
@@ -10,6 +11,7 @@ import 'global_services/window_service.dart';
 import 'global_services/theme_service.dart';
 import 'global_services/appearance_service.dart';
 import 'config/routes.dart';
+import 'config/constants.dart';
 
 void main() async {
   // 确保Flutter绑定已初始化
@@ -29,11 +31,26 @@ void main() async {
   // 加载登录信息
   await authService.loadLoginInfo();
 
-  runApp(const MyApp());
+  // 检查是否有保存的端点
+  final prefs = await SharedPreferences.getInstance();
+  final hasEndpoint = prefs.getString(Constants.currentEndpointKey) != null;
+
+  // 如果没有保存的端点，使用默认端点并保存
+  if (!hasEndpoint) {
+    await api.saveEndpoint(api.baseUrl!);
+  }
+
+  // 创建App实例，并传递hasEndpoint参数
+  runApp(MyApp(hasEndpoint: true)); // 始终使用true，因为我们已经确保有端点
+
+  // 加载登录信息
+  await authService.loadLoginInfo();
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final bool hasEndpoint;
+
+  const MyApp({super.key, required this.hasEndpoint});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -185,7 +202,9 @@ class _MyAppState extends State<MyApp> {
                                           : Icons.fullscreen,
                                       size: 14,
                                     ),
-                                    onPressed: () => _toggleMaximize(),
+                                    onPressed: () async {
+                                      await _toggleMaximize();
+                                    },
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.onSurface,
@@ -214,7 +233,9 @@ class _MyAppState extends State<MyApp> {
               theme: finalLightTheme,
               darkTheme: finalDarkTheme,
               themeMode: _themeMode,
-              initialRoute: AppRoutes.initialRoute, // 使用统一的初始路由配置
+              initialRoute: widget.hasEndpoint
+                  ? '/home'
+                  : '/endpoint', // 根据是否有端点动态设置初始路由
               getPages: appRoutes, // 使用统一的路由配置列表
               navigatorObservers: [FlutterSmartDialog.observer],
             );

@@ -1,70 +1,25 @@
-import 'package:flutter/material.dart';
+// 全局常量
+class Constants {
+  // 端点相关
+  static const String endpointsKey = 'flarum_endpoints';
+  static const String currentEndpointKey = 'flarum_current_endpoint';
 
-/// 全局常量配置
-class AppConstants {
-  /// 应用名称
-  static const String appName = 'PetalTalk';
+  // 端点特定数据的前缀
+  static const String endpointDataPrefix = 'flarum_endpoint_';
 
-  /// 默认主题色
-  static const Color primaryColor = Colors.blue;
+  // 认证相关
+  static const String tokenKey = 'token';
+  static const String userIdKey = 'user_id';
+  static const String usernameKey = 'username';
 
-  /// 默认深色主题色
-  static const Color darkPrimaryColor = Colors.blueAccent;
+  // 主题相关
+  static const String themeModeKey = 'theme_mode';
+  static const String useDynamicColorKey = 'use_dynamic_color';
+  static const String accentColorKey = 'accent_color';
+  static const String fontSizeKey = 'font_size';
+  static const String compactLayoutKey = 'compact_layout';
+  static const String showAvatarsKey = 'show_avatars';
 
-  /// 标题栏高度（仅桌面平台）
-  static const double titleBarHeight = 30.0;
-
-  /// 默认字体大小
-  static const double defaultFontSize = 16.0;
-
-  /// 最小字体大小
-  static const double minFontSize = 12.0;
-
-  /// 最大字体大小
-  static const double maxFontSize = 24.0;
-
-  /// 网格视图交叉轴数量
-  static const int gridCrossAxisCount = 4;
-
-  /// 网格间距
-  static const double gridSpacing = 8.0;
-
-  /// 强调色选择对话框宽度
-  static const double accentColorDialogWidth = 200.0;
-
-  /// 强调色选择对话框高度
-  static const double accentColorDialogHeight = 250.0;
-}
-
-/// 存储键名常量
-class StorageKeys {
-  /// 主题模式
-  static const String themeMode = 'theme_mode';
-
-  /// 字体大小
-  static const String fontSize = 'font_size';
-
-  /// 深色主题偏好
-  static const String darkTheme = 'dark_theme';
-
-  /// 使用动态色彩
-  static const String useDynamicColor = 'use_dynamic_color';
-
-  /// 强调色
-  static const String accentColor = 'accent_color';
-
-  /// 紧凑布局
-  static const String compactLayout = 'compact_layout';
-
-  /// 显示头像
-  static const String showAvatars = 'show_avatars';
-
-  /// 端点配置
-  static const String flarumEndpoint = 'flarum_endpoint';
-
-  /// 登录令牌
-  static const String flarumToken = 'flarum_token';
-
-  /// 用户ID
-  static const String flarumUserId = 'flarum_user_id';
+  // 布局偏好
+  static const String layoutPreferenceKey = 'layout_preference';
 }

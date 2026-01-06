@@ -53,7 +53,7 @@ class Discussion {
       createdAt: json['attributes']['createdAt'],
       lastPostedAt: json['attributes']['lastPostedAt'],
       lastPostNumber: json['attributes']['lastPostNumber'],
-      canReply: json['attributes']['canReply'] ?? false,
+      canReply: json['attributes']['canReply'] ?? true,
       canRename: json['attributes']['canRename'] ?? false,
       canDelete: json['attributes']['canDelete'] ?? false,
       canHide: json['attributes']['canHide'] ?? false,
@@ -61,12 +61,14 @@ class Discussion {
       isLocked: json['attributes']['isLocked'] ?? false,
       isSticky: json['attributes']['isSticky'] ?? false,
       subscription: json['attributes']['subscription'],
-      userId: json['relationships']['user']['data']['id'],
-      lastPostedUserId: json['relationships']['lastPostedUser']['data']['id'],
-      tagIds: (json['relationships']['tags']['data'] as List)
+      userId: json['relationships']['user']?['data']?['id'] ?? 'unknown',
+      lastPostedUserId:
+          json['relationships']['lastPostedUser']?['data']?['id'] ?? 'unknown',
+      tagIds: (json['relationships']['tags']?['data'] as List? ?? [])
           .map((tag) => tag['id'] as String)
           .toList(),
-      firstPostId: json['relationships']['firstPost']['data']['id'],
+      firstPostId:
+          json['relationships']['firstPost']?['data']?['id'] ?? 'unknown',
     );
   }
 }

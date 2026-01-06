@@ -5,6 +5,7 @@ import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../widgets/setting_page.dart';
 import '../../api/request/auth_service.dart';
+import '../../api/flarum_api.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -15,6 +16,7 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
   final AppearanceService _appearanceService = AppearanceService();
+  final FlarumApi _api = FlarumApi();
   bool _isDarkMode = false;
 
   @override
@@ -68,22 +70,6 @@ class _SettingPageState extends State<SettingPage> {
     });
     // 重新加载主题设置
     _loadThemeSettings();
-  }
-
-  // 切换紧凑布局
-  Future<void> _toggleCompactLayout(bool value) async {
-    await _appearanceService.saveCompactLayout(value);
-    setState(() {
-      _compactLayout = value;
-    });
-  }
-
-  // 切换显示头像
-  Future<void> _toggleShowAvatars(bool value) async {
-    await _appearanceService.saveShowAvatars(value);
-    setState(() {
-      _showAvatars = value;
-    });
   }
 
   // 更新强调色
@@ -335,18 +321,6 @@ class _SettingPageState extends State<SettingPage> {
                 ),
               ),
             ),
-            SwitchListTile(
-              title: const Text('紧凑布局'),
-              subtitle: const Text('减少元素间距，显示更多内容'),
-              value: _compactLayout,
-              onChanged: _toggleCompactLayout,
-            ),
-            SwitchListTile(
-              title: const Text('显示头像'),
-              subtitle: const Text('在主题帖和回复中显示用户头像'),
-              value: _showAvatars,
-              onChanged: _toggleShowAvatars,
-            ),
           ],
         ),
       },
@@ -413,6 +387,213 @@ class _SettingPageState extends State<SettingPage> {
         ),
       },
     ];
+
+    // 添加端点管理设置
+    settingItems.insert(1, {
+      'icon': Icons.cloud_outlined,
+      'title': '端点管理',
+      'content': FutureBuilder<List<String>>(
+        future: _api.getEndpoints(),
+        builder: (context, snapshot) {
+          final endpoints = snapshot.data ?? [];
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // 当前端点信息
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '当前端点',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _api.baseUrl ?? '未设置',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 添加新端点
+              ElevatedButton.icon(
+                onPressed: () {
+                  // 跳转到端点选择页面
+                  Get.offAllNamed('/endpoint');
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('添加新端点'),
+              ),
+              const SizedBox(height: 16),
+              // 端点列表
+              if (endpoints.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '已保存的端点',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...endpoints.map((endpoint) {
+                      final isCurrent = endpoint == _api.baseUrl;
+                      return Card(
+                        child: ListTile(
+                          title: Text(endpoint),
+                          subtitle: isCurrent ? const Text('当前使用') : null,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!isCurrent)
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    // 切换到该端点
+                                    await _api.switchEndpoint(endpoint);
+                                    // 重新加载当前端点信息
+                                    setState(() {});
+                                    Get.snackbar('成功', '已切换到新端点');
+                                  },
+                                  icon: const Icon(Icons.swap_horiz),
+                                  label: const Text('切换'),
+                                ),
+                              IconButton(
+                                onPressed: () async {
+                                  // 确认删除
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text('确认删除'),
+                                        content: Text(
+                                          '确定要删除端点 $endpoint 吗？此操作将删除该端点的所有数据。',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context, false);
+                                            },
+                                            child: const Text('取消'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context, true);
+                                            },
+                                            child: const Text('删除'),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                  if (confirm == true) {
+                                    // 删除端点
+                                    await _api.deleteEndpoint(endpoint);
+                                    // 重新加载端点列表
+                                    setState(() {});
+                                    Get.snackbar('成功', '已删除端点');
+                                  }
+                                },
+                                icon: const Icon(Icons.delete),
+                                color: Colors.red,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+            ],
+          );
+        },
+      ),
+    });
+
+    // 添加数据管理设置
+    settingItems.add({
+      'icon': Icons.data_saver_on,
+      'title': '数据管理',
+      'content': ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // 删除所有数据
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '删除所有数据',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('此操作将删除所有端点的数据并退出登录，不可恢复。'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        // 确认删除
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('确认删除所有数据'),
+                              content: const Text(
+                                '此操作将删除所有端点的数据并退出登录，不可恢复。您确定要继续吗？',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, false);
+                                  },
+                                  child: const Text('取消'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, true);
+                                  },
+                                  child: const Text('删除'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirm == true) {
+                          // 删除所有数据
+                          await _api.clearAllData();
+                          // 退出登录
+                          authService.logout();
+                          // 跳转到端点选择页面
+                          Get.offAllNamed('/endpoint');
+                          Get.snackbar('成功', '已删除所有数据');
+                        }
+                      },
+                      icon: const Icon(Icons.delete_forever),
+                      label: const Text('删除所有数据'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    });
 
     return UiSettingPage(
       settingItems: settingItems,

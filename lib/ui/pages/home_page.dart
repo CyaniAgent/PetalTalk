@@ -7,6 +7,8 @@ import '../../api/request/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../widgets/discussion_card.dart';
 import '../widgets/ui_main_frame.dart';
+import 'notification_page.dart';
+import 'state/main_state.dart';
 
 // 主题帖列表组件
 class DiscussionList extends StatefulWidget {
@@ -16,7 +18,8 @@ class DiscussionList extends StatefulWidget {
   State<DiscussionList> createState() => _DiscussionListState();
 }
 
-class _DiscussionListState extends State<DiscussionList> {
+class _DiscussionListState extends State<DiscussionList>
+    with AutomaticKeepAliveClientMixin<DiscussionList> {
   final DiscussionService _discussionService = DiscussionService();
   final List<Discussion> _discussions = [];
   bool _isLoading = false;
@@ -24,11 +27,19 @@ class _DiscussionListState extends State<DiscussionList> {
   int _offset = 0;
   final int _limit = 20;
 
+  // 存储用户信息，key是userId，value是用户名
+  final Map<String, String> _users = {};
+  // 存储标签信息，key是tagId，value是标签名称
+  final Map<String, String> _tags = {};
+
   @override
   void initState() {
     super.initState();
     _loadDiscussions();
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   // 加载主题帖列表
   Future<void> _loadDiscussions({bool isRefresh = false}) async {
@@ -52,6 +63,22 @@ class _DiscussionListState extends State<DiscussionList> {
     if (!mounted) return;
 
     if (result != null) {
+      // 处理included数据，获取用户和标签信息
+      if (result.containsKey('included')) {
+        final List<dynamic> included = result['included'];
+        for (final item in included) {
+          if (item['type'] == 'users') {
+            final userId = item['id'];
+            final username = item['attributes']['username'];
+            _users[userId] = username;
+          } else if (item['type'] == 'tags') {
+            final tagId = item['id'];
+            final tagName = item['attributes']['name'];
+            _tags[tagId] = tagName;
+          }
+        }
+      }
+
       final List<Discussion> newDiscussions = (result['data'] as List)
           .map((discussion) => Discussion.fromJson(discussion))
           .toList();
@@ -95,6 +122,7 @@ class _DiscussionListState extends State<DiscussionList> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('PetalTalk'),
@@ -109,8 +137,9 @@ class _DiscussionListState extends State<DiscussionList> {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              // 跳转到消息页
-              SnackbarUtils.showDevelopmentInProgress(context);
+              // 切换到底部导航栏的通知页面
+              final uiController = Get.find<UiMainController>();
+              uiController.setSelectedIndex(1);
             },
           ),
           IconButton(
@@ -132,16 +161,17 @@ class _DiscussionListState extends State<DiscussionList> {
                   if (index < _discussions.length) {
                     final discussion = _discussions[index];
                     return DiscussionCard(
+                      id: discussion.id,
                       title: discussion.title,
-                      author: '作者', // 这里需要从included数据中获取作者信息
+                      author: _users[discussion.userId] ?? '未知用户', // 使用真实作者信息
                       createdAt: discussion.createdAt,
                       commentCount: discussion.commentCount,
                       viewCount: 0, // 这里需要从API响应中获取浏览数
                       isSticky: discussion.isSticky,
                       isLocked: discussion.isLocked,
                       tags: discussion.tagIds
-                          .map((id) => '标签 $id')
-                          .toList(), // 这里需要从included数据中获取标签名称
+                          .map((id) => _tags[id] ?? '标签 $id')
+                          .toList(), // 使用真实标签名称
                       onTap: () => _gotoDiscussionDetail(discussion),
                     );
                   } else if (_hasMore) {
@@ -166,27 +196,46 @@ class _DiscussionListState extends State<DiscussionList> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // 创建主题帖
-          Get.toNamed('/create-discussion');
+      floatingActionButton: Builder(
+        builder: (context) {
+          // 检测屏幕宽度，根据不同设备尺寸调整padding
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isMobile = screenWidth < 768;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: isMobile ? 80.0 : 0.0),
+            child: FloatingActionButton(
+              onPressed: () {
+                // 创建主题帖
+                Get.toNamed('/create-discussion');
+              },
+              child: const Icon(Icons.add),
+            ),
+          );
         },
-        child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
 
 // 主页面，使用UiMainFrame整合导航
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
+  State<HomePage> createState() => _HomePageState();
+}
 
-    // 导航项配置
-    final List<Map<String, dynamic>> navItems = [
+class _HomePageState extends State<HomePage> {
+  late List<Map<String, dynamic>> navItems;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化导航项配置，只在组件创建时执行一次
+    // 这样页面实例只会创建一次，避免窗口大小变化时状态丢失
+    navItems = [
       {
         'id': 0,
         'icon': const Icon(Icons.home_outlined),
@@ -195,92 +244,96 @@ class HomePage extends StatelessWidget {
         'count': 0,
         'page': const DiscussionList(),
       },
-      // TODO: 消息通知功能待实现
-      /*{
+      {
         'id': 1,
         'icon': const Icon(Icons.notifications_outlined),
         'selectIcon': const Icon(Icons.notifications),
         'label': '消息',
         'count': 0,
-        'page': Scaffold(
-          appBar: AppBar(title: const Text('消息通知')),
-          body: const Center(child: Text('消息列表')),
-        ),
-      },*/
+        'page': const NotificationList(),
+      },
       {
         'id': 2,
         'icon': const Icon(Icons.person_outlined),
         'selectIcon': const Icon(Icons.person),
         'label': '我的',
         'count': 0,
-        'page': Scaffold(
-          appBar: AppBar(title: const Text('个人中心')),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (authService.isLoggedIn())
-                  Column(
-                    children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.blue,
-                        // 这里应该显示用户头像
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '占位符',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text('占位符@sorange.top'),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          // 退出登录
-                          authService.logout();
-                          Get.snackbar(
-                            '提示',
-                            '已退出登录',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                          // 刷新页面
-                          Get.offAllNamed('/home');
-                        },
-                        child: const Text('退出登录'),
-                      ),
-                    ],
-                  )
-                else
-                  Column(
-                    children: [
-                      const Icon(
-                        Icons.person_off,
-                        size: 80,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('您尚未登录', style: TextStyle(fontSize: 18)),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          // 跳转到登录页面
-                          Get.toNamed('/login');
-                        },
-                        child: const Text('登录'),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ),
+        'page': const _ProfilePage(),
       },
     ];
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return UiMainFrame(navItems: navItems, enableGradientBg: true);
+  }
+}
+
+// 个人中心页面，提取为独立组件
+class _ProfilePage extends StatelessWidget {
+  const _ProfilePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final AuthService authService = AuthService();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('个人中心')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (authService.isLoggedIn())
+              Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.blue,
+                    // 这里应该显示用户头像
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '占位符',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('占位符@sorange.top'),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      // 退出登录
+                      authService.logout();
+                      Get.snackbar(
+                        '提示',
+                        '已退出登录',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                      // 刷新页面
+                      Get.offAllNamed('/home');
+                    },
+                    child: const Text('退出登录'),
+                  ),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  const Icon(Icons.person_off, size: 80, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('您尚未登录', style: TextStyle(fontSize: 18)),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      // 跳转到登录页面
+                      Get.toNamed('/login');
+                    },
+                    child: const Text('登录'),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

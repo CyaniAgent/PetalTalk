@@ -38,8 +38,13 @@ class UiMainController extends GetxController {
   /// 设置导航栏配置
   void setNavBarConfig(List<Map<String, dynamic>> navItems) {
     navigationBars.value = navItems;
-    pages.value = navigationBars.map<Widget>((e) => e['page']).toList();
     pagesIds.value = navigationBars.map<int>((e) => e['id']).toList();
+    
+    // 只有在pages列表为空或者页面数量发生变化时，才重新创建页面列表
+    // 否则，保持现有页面实例不变，避免状态丢失
+    if (pages.isEmpty || pages.length != navItems.length) {
+      pages.value = navigationBars.map<Widget>((e) => e['page']).toList();
+    }
   }
 
   /// 处理返回按钮点击

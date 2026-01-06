@@ -1,71 +1,50 @@
 import '../flarum_api.dart';
+import '../models/notification.dart' as notification_model;
 
 class NotificationService {
   final FlarumApi _api = FlarumApi();
 
   // 获取通知列表
-  Future<Map<String, dynamic>?> getNotifications({
-    bool? unread,
+  Future<List<notification_model.Notification>?> getNotifications({
     int offset = 0,
-    int limit = 20,
   }) async {
     try {
-      final queryParameters = {
-        'page[offset]': offset,
-        'page[limit]': limit,
-        if (unread != null) 'filter[unread]': unread,
-      };
-
       final response = await _api.get(
         '/api/notifications',
-        queryParameters: queryParameters,
+        queryParameters: {'page[offset]': offset, 'include': ''},
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        final data = response.data;
+        final List<dynamic> notificationsJson = data['data'];
+        final List<dynamic> includedJson = data['included'] ?? [];
+
+        // 构建included数据的索引映射，便于快速查找
+        final Map<String, Map<String, dynamic>> includedData = {};
+        for (final item in includedJson) {
+          final key = '${item['type']}_${item['id']}';
+          includedData[key] = item;
+        }
+
+        // 解析通知数据
+        final notifications = notificationsJson
+            .map(
+              (json) =>
+                  notification_model.Notification.fromJson(json, includedData),
+            )
+            .toList();
+
+        return notifications;
       }
       return null;
     } catch (e) {
-      print('Get notifications error: $e');
+      // 使用调试信息而非print语句，便于后续替换为日志系统
+      // ignore: avoid_print
+      assert(() {
+        print('Get notifications error: $e');
+        return true;
+      }());
       return null;
-    }
-  }
-
-  // 标记所有通知为已读
-  Future<bool> markAllAsRead() async {
-    try {
-      final response = await _api.post(
-        '/api/notifications/read',
-        data: {
-          'data': {'type': 'notifications'},
-        },
-      );
-
-      return response.statusCode == 204;
-    } catch (e) {
-      print('Mark all notifications as read error: $e');
-      return false;
-    }
-  }
-
-  // 标记单个通知为已读
-  Future<bool> markAsRead(String id) async {
-    try {
-      final response = await _api.patch(
-        '/api/notifications/$id',
-        data: {
-          'data': {
-            'type': 'notifications',
-            'id': id,
-            'attributes': {'isRead': true},
-          },
-        },
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Mark notification as read error: $e');
-      return false;
     }
   }
 }

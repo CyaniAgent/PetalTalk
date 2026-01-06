@@ -95,23 +95,30 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       }
                     },
                     children: [
-                      ...widget.settingItems.map((item) {
+                      // 设置项
+                      ...widget.settingItems.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final isSelected = selectedIndex.value == index;
+
                         return NavigationDrawerDestination(
-                          icon: Icon(item['icon']),
+                          icon: isSelected
+                              ? Icon(item['icon'])
+                              : Icon(item['icon'], fill: 0.0),
                           label: Text(item['title']),
                         );
-                      }),
+                      }).toList(),
                       // 退出登录按钮 - 仅在登录状态下显示
                       if (settingController.userLogin.value &&
                           widget.showLogoutButton)
-                        const NavigationDrawerDestination(
-                          icon: Icon(Icons.logout_outlined),
-                          label: Text('退出登录'),
+                        NavigationDrawerDestination(
+                          icon: const Icon(Icons.logout_outlined),
+                          label: const Text('退出登录'),
                         ),
                       // 关于按钮
-                      const NavigationDrawerDestination(
-                        icon: Icon(Icons.info_outlined),
-                        label: Text('关于'),
+                      NavigationDrawerDestination(
+                        icon: const Icon(Icons.info_outlined),
+                        label: const Text('关于'),
                       ),
                     ],
                   ),
