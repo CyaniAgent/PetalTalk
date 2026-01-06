@@ -1,48 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/request/auth_service.dart';
+import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+// 登录控制器，管理登录状态
+class LoginController extends GetxController {
+  final _authService = AuthService();
 
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
+  // 使用GetX的响应式变量
+  final isLoading = false.obs;
+  final rememberMe = false.obs;
 
-class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _identificationController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _rememberMe = false;
-
-  final AuthService _authService = AuthService();
+  // 表单控制器
+  final formKey = GlobalKey<FormState>();
+  final identificationController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
   void dispose() {
-    _identificationController.dispose();
-    _passwordController.dispose();
+    identificationController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
   // 处理登录
-  Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+  Future<void> handleLogin() async {
+    if (formKey.currentState!.validate()) {
+      isLoading.value = true;
 
       final result = await _authService.login(
-        identification: _identificationController.text,
-        password: _passwordController.text,
-        remember: _rememberMe,
+        identification: identificationController.text,
+        password: passwordController.text,
+        remember: rememberMe.value,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
+      isLoading.value = false;
 
       if (result != null) {
         // 登录成功，跳转到首页
@@ -54,8 +47,21 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // 切换记住我状态
+  void toggleRememberMe(bool? value) {
+    rememberMe.value = value ?? false;
+  }
+}
+
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
   @override
   Widget build(BuildContext context) {
+    // 使用Get.put创建并获取控制器实例
+    final controller = Get.put(LoginController());
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -78,23 +84,20 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 标题
-                  Text(
-                    '欢迎回来',
-                    style: Theme.of(context).textTheme.headlineLarge,
-                  ),
+                  Text('欢迎回来', style: textTheme.headlineLarge),
                   const SizedBox(height: 8),
-                  Text('请登录您的账户', style: Theme.of(context).textTheme.bodyLarge),
+                  Text('请登录您的账户', style: textTheme.bodyLarge),
                   const SizedBox(height: 48),
 
                   // 登录表单
                   Form(
-                    key: _formKey,
+                    key: controller.formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 用户名/邮箱
                         TextFormField(
-                          controller: _identificationController,
+                          controller: controller.identificationController,
                           decoration: InputDecoration(
                             labelText: '用户名或邮箱',
                             hintText: '请输入用户名或邮箱',
@@ -114,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         // 密码
                         TextFormField(
-                          controller: _passwordController,
+                          controller: controller.passwordController,
                           obscureText: true,
                           decoration: InputDecoration(
                             labelText: '密码',
@@ -139,13 +142,11 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             Row(
                               children: [
-                                Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
+                                Obx(
+                                  () => Checkbox(
+                                    value: controller.rememberMe.value,
+                                    onChanged: controller.toggleRememberMe,
+                                  ),
                                 ),
                                 const Text('记住我'),
                               ],
@@ -168,24 +169,26 @@ class _LoginPageState extends State<LoginPage> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
+                            onPressed: controller.isLoading.value
+                                ? null
+                                : controller.handleLogin,
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              textStyle: Theme.of(
-                                context,
-                              ).textTheme.titleMedium,
+                              textStyle: textTheme.titleMedium,
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('登录'),
+                            child: Obx(
+                              () => controller.isLoading.value
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('登录'),
+                            ),
                           ),
                         ),
                       ],

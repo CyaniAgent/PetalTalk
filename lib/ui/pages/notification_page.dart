@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/request/notification_service.dart';
+import '../../api/services/notification_service.dart';
 import '../../api/models/notification.dart' as notification_model;
 import '../../utils/snackbar_utils.dart';
 import '../../utils/time_formatter.dart';

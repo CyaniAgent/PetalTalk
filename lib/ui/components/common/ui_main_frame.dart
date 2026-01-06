@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../pages/state/main_state.dart';
+import '../../../state/main_state.dart';
 
 // 动态徽章模式枚举
 enum DynamicBadgeMode { hidden, point, number }
@@ -35,8 +35,8 @@ class _UiMainFrameState extends State<UiMainFrame> {
   void initState() {
     super.initState();
     // 查找或创建控制器，避免重复创建导致状态重置
-    _mainController = Get.isRegistered<UiMainController>() 
-        ? Get.find<UiMainController>() 
+    _mainController = Get.isRegistered<UiMainController>()
+        ? Get.find<UiMainController>()
         : Get.put(UiMainController());
     _mainController.enableGradientBg.value = widget.enableGradientBg;
     // 每次都设置导航栏配置，确保页面列表正确
@@ -51,8 +51,14 @@ class _UiMainFrameState extends State<UiMainFrame> {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
+    final double screenWidth = mediaQuery.size.width;
+    final Size screenSize = mediaQuery.size;
     final bool isWideScreen = screenWidth > 600; // 宽屏阈值
+
+    final theme = Theme.of(context);
+    final brightness = theme.brightness;
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       extendBody: !isWideScreen, // 宽屏时不需要延伸Body
@@ -95,21 +101,16 @@ class _UiMainFrameState extends State<UiMainFrame> {
                         Align(
                           alignment: Alignment.topLeft,
                           child: Opacity(
-                            opacity:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? 0.3
-                                : 0.6,
+                            opacity: brightness == Brightness.dark ? 0.3 : 0.6,
                             child: Container(
                               width: double.infinity,
                               height: double.infinity,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Theme.of(context).colorScheme.primary
-                                        .withValues(alpha: 0.7),
-                                    Theme.of(context).colorScheme.surface,
-                                    Theme.of(context).colorScheme.surface
-                                        .withValues(alpha: 0.3),
+                                    colorScheme.primary.withValues(alpha: 0.7),
+                                    colorScheme.surface,
+                                    colorScheme.surface.withValues(alpha: 0.3),
                                   ],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
@@ -139,22 +140,16 @@ class _UiMainFrameState extends State<UiMainFrame> {
                   Align(
                     alignment: Alignment.topLeft,
                     child: Opacity(
-                      opacity: Theme.of(context).brightness == Brightness.dark
-                          ? 0.3
-                          : 0.6,
+                      opacity: brightness == Brightness.dark ? 0.3 : 0.6,
                       child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height,
+                        width: screenSize.width,
+                        height: screenSize.height,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.7),
-                              Theme.of(context).colorScheme.surface,
-                              Theme.of(
-                                context,
-                              ).colorScheme.surface.withValues(alpha: 0.3),
+                              colorScheme.primary.withValues(alpha: 0.7),
+                              colorScheme.surface,
+                              colorScheme.surface.withValues(alpha: 0.3),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,

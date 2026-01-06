@@ -2,9 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../flarum_api.dart';
 import '../../config/constants.dart';
+import 'package:get/get.dart';
+import '../../utils/error_handler.dart';
 
 class AuthService {
-  final FlarumApi _api = FlarumApi();
+  final FlarumApi _api = Get.find<FlarumApi>();
 
   // 登录
   Future<Map<String, dynamic>?> login({
@@ -42,10 +44,7 @@ class AuthService {
       }
       return null;
     } on DioException catch (e) {
-      // 打印详细的错误信息，方便调试
-      print('Login DioException: ${e.response?.statusCode}');
-      print('Login DioException data: ${e.response?.data}');
-      print('Login DioException message: ${e.message}');
+      ErrorHandler.handleError(e, 'Login');
 
       // 即使发生异常，也要检查响应数据中是否包含token
       if (e.response?.data != null && e.response?.data['token'] != null) {
@@ -68,7 +67,7 @@ class AuthService {
 
       return null;
     } catch (e) {
-      print('Login error: $e');
+      ErrorHandler.handleError(e, 'Login');
       return null;
     }
   }

@@ -1,7 +1,9 @@
 import '../flarum_api.dart';
+import 'package:get/get.dart';
+import '../../utils/error_handler.dart';
 
 class UserService {
-  final FlarumApi _api = FlarumApi();
+  final FlarumApi _api = Get.find<FlarumApi>();
 
   // 获取当前用户信息
   Future<Map<String, dynamic>?> getCurrentUser() async {
@@ -13,7 +15,7 @@ class UserService {
       }
       return null;
     } catch (e) {
-      print('Get current user error: $e');
+      ErrorHandler.handleError(e, 'Get current user');
       return null;
     }
   }
@@ -28,7 +30,7 @@ class UserService {
       }
       return null;
     } catch (e) {
-      print('Get user error: $e');
+      ErrorHandler.handleError(e, 'Get user');
       return null;
     }
   }
@@ -55,7 +57,7 @@ class UserService {
       }
       return null;
     } catch (e) {
-      print('Update user error: $e');
+      ErrorHandler.handleError(e, 'Update user');
       return null;
     }
   }

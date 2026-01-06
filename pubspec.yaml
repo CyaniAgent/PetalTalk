@@ -17,7 +17,7 @@ publish_to: "none" # 如果你想发布到pub.dev，请删除这一行
 version: 0.0.1+10
 
 environment:
-  sdk: ^3.10.4
+  sdk: ^3.32.0
 
 # 依赖项指定了你的包工作所需的其他包。
 # 要自动将包依赖项升级到最新版本，

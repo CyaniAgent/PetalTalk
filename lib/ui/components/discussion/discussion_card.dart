@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/time_formatter.dart';
+import '../../../utils/time_formatter.dart';
 
 class DiscussionCard extends StatelessWidget {
   final String id;
@@ -7,7 +7,6 @@ class DiscussionCard extends StatelessWidget {
   final String author;
   final String createdAt;
   final int commentCount;
-  final int viewCount;
   final bool isSticky;
   final bool isLocked;
   final List<String> tags;
@@ -20,7 +19,6 @@ class DiscussionCard extends StatelessWidget {
     required this.author,
     required this.createdAt,
     required this.commentCount,
-    required this.viewCount,
     required this.isSticky,
     required this.isLocked,
     required this.tags,
@@ -29,6 +27,10 @@ class DiscussionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
@@ -46,14 +48,14 @@ class DiscussionCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Hero(
-                    tag: 'discussion-title-$id',
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      tag: 'discussion-title-$id',
+                      child: Text(
+                        title,
+                        style: textTheme.titleMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
                   ),
                   if (isSticky)
                     const Padding(
@@ -87,16 +89,14 @@ class DiscussionCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           tags[index],
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: colorScheme.primary,
                           ),
                         ),
                       );
@@ -111,51 +111,24 @@ class DiscussionCard extends StatelessWidget {
                   // 作者和时间
                   Row(
                     children: [
-                      Text(
-                        author,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      Text(author, style: textTheme.bodySmall),
                       const SizedBox(width: 8),
                       const Icon(Icons.circle, size: 4, color: Colors.grey),
                       const SizedBox(width: 8),
                       Text(
                         TimeFormatter.formatLocalTime(createdAt),
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: textTheme.bodySmall,
                       ),
                     ],
                   ),
-                  // 评论和浏览数
+                  // 评论数
                   Row(
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.comment,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            (commentCount > 0 ? commentCount - 1 : 0)
-                                .toString(),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.remove_red_eye,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            viewCount.toString(),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                      const Icon(Icons.comment, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        (commentCount > 0 ? commentCount - 1 : 0).toString(),
+                        style: textTheme.bodySmall,
                       ),
                     ],
                   ),

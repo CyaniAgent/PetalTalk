@@ -1,7 +1,9 @@
 import '../flarum_api.dart';
+import 'package:get/get.dart';
+import '../../utils/error_handler.dart';
 
 class PostService {
-  final FlarumApi _api = FlarumApi();
+  final FlarumApi _api = Get.find<FlarumApi>();
 
   // 获取帖子列表
   Future<Map<String, dynamic>?> getPosts({
@@ -19,7 +21,7 @@ class PostService {
       }
       return null;
     } catch (e) {
-      print('Get posts error: $e');
+      ErrorHandler.handleError(e, 'Get posts');
       return null;
     }
   }
@@ -34,7 +36,7 @@ class PostService {
       }
       return null;
     } catch (e) {
-      print('Get post error: $e');
+      ErrorHandler.handleError(e, 'Get post');
       return null;
     }
   }
@@ -60,7 +62,7 @@ class PostService {
       }
       return null;
     } catch (e) {
-      print('Get posts for discussion error: $e');
+      ErrorHandler.handleError(e, 'Get posts for discussion');
       return null;
     }
   }
@@ -91,7 +93,7 @@ class PostService {
       }
       return null;
     } catch (e) {
-      print('Reply to discussion error: $e');
+      ErrorHandler.handleError(e, 'Reply to discussion');
       return null;
     }
   }
@@ -118,7 +120,7 @@ class PostService {
       }
       return null;
     } catch (e) {
-      print('Update post error: $e');
+      ErrorHandler.handleError(e, 'Update post');
       return null;
     }
   }

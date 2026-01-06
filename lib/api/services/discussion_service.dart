@@ -1,7 +1,9 @@
 import '../flarum_api.dart';
+import 'package:get/get.dart';
+import '../../utils/error_handler.dart';
 
 class DiscussionService {
-  final FlarumApi _api = FlarumApi();
+  final FlarumApi _api = Get.find<FlarumApi>();
 
   // 获取主题帖列表
   Future<Map<String, dynamic>?> getDiscussions({
@@ -19,13 +21,7 @@ class DiscussionService {
       }
       return null;
     } catch (e) {
-      // 使用调试信息而非print语句，便于后续替换为日志系统
-      // 实际项目中建议使用日志库如logger
-      // ignore: avoid_print
-      assert(() {
-        print('Get discussions error: $e');
-        return true;
-      }());
+      ErrorHandler.handleError(e, 'Get discussions');
       return null;
     }
   }
@@ -40,12 +36,7 @@ class DiscussionService {
       }
       return null;
     } catch (e) {
-      // 使用调试信息而非print语句，便于后续替换为日志系统
-      // ignore: avoid_print
-      assert(() {
-        print('Get discussion error: $e');
-        return true;
-      }());
+      ErrorHandler.handleError(e, 'Get discussion');
       return null;
     }
   }
@@ -86,12 +77,7 @@ class DiscussionService {
       }
       return null;
     } catch (e) {
-      // 使用调试信息而非print语句，便于后续替换为日志系统
-      // ignore: avoid_print
-      assert(() {
-        print('Create discussion error: $e');
-        return true;
-      }());
+      ErrorHandler.handleError(e, 'Create discussion');
       return null;
     }
   }

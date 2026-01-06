@@ -46,41 +46,57 @@ class _ThemeModePageState extends State<ThemeModePage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                RadioListTile<ThemeMode>(
-                  title: const Text('跟随系统'),
-                  subtitle: const Text('根据系统设置自动切换主题'),
-                  value: ThemeMode.system,
-                  groupValue: _selectedThemeMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      _saveThemeMode(value);
-                    }
-                  },
-                ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('浅色模式'),
-                  subtitle: const Text('始终使用浅色主题'),
-                  value: ThemeMode.light,
-                  groupValue: _selectedThemeMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      _saveThemeMode(value);
-                    }
-                  },
-                ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('深色模式'),
-                  subtitle: const Text('始终使用深色主题'),
-                  value: ThemeMode.dark,
-                  groupValue: _selectedThemeMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      _saveThemeMode(value);
-                    }
-                  },
-                ),
+                // 使用自定义的单选列表项，避免使用弃用的RadioGroup API
+                _buildThemeOption(ThemeMode.system, '跟随系统', '根据系统设置自动切换主题'),
+                _buildThemeOption(ThemeMode.light, '浅色模式', '始终使用浅色主题'),
+                _buildThemeOption(ThemeMode.dark, '深色模式', '始终使用深色主题'),
               ],
             ),
+    );
+  }
+
+  /// 构建主题选项列表项
+  Widget _buildThemeOption(ThemeMode mode, String title, String subtitle) {
+    return InkWell(
+      onTap: () => _saveThemeMode(mode),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Row(
+          children: [
+            // 使用自定义的单选按钮样式
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _selectedThemeMode == mode
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
+                  width: 2,
+                ),
+                color: _selectedThemeMode == mode
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.transparent,
+              ),
+              child: _selectedThemeMode == mode
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

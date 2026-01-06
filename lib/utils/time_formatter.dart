@@ -29,7 +29,6 @@ class TimeFormatter {
       // 其他情况，显示"年-月-日 时间"
       return "${localTime.year}-${localTime.month}-${localTime.day} ${localTime.formatTime()}";
     } catch (e) {
-      print("Time format error: $e");
       return isoTime;
     }
   }

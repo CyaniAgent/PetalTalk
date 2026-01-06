@@ -3,54 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'api/flarum_api.dart';
-import 'api/request/auth_service.dart';
+import 'core/initializer.dart';
 import 'global_services/window_service.dart';
 import 'global_services/theme_service.dart';
-import 'global_services/appearance_service.dart';
 import 'config/routes.dart';
-import 'config/constants.dart';
 
 void main() async {
-  // 确保Flutter绑定已初始化
-  WidgetsFlutterBinding.ensureInitialized();
+  // 初始化应用
+  await AppInitializer.init();
 
-  // 初始化并设置窗口
-  await WindowService.initialize();
-  await WindowService.setupWindow();
-
-  // 创建必要的服务实例
-  final api = FlarumApi();
-  final authService = AuthService();
-
-  // 加载端点配置
-  await api.loadEndpoint();
-
-  // 加载登录信息
-  await authService.loadLoginInfo();
-
-  // 检查是否有保存的端点
-  final prefs = await SharedPreferences.getInstance();
-  final hasEndpoint = prefs.getString(Constants.currentEndpointKey) != null;
-
-  // 如果没有保存的端点，使用默认端点并保存
-  if (!hasEndpoint) {
-    await api.saveEndpoint(api.baseUrl!);
-  }
-
-  // 创建App实例，并传递hasEndpoint参数
-  runApp(MyApp(hasEndpoint: true)); // 始终使用true，因为我们已经确保有端点
-
-  // 加载登录信息
-  await authService.loadLoginInfo();
+  // 启动应用
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  final bool hasEndpoint;
-
-  const MyApp({super.key, required this.hasEndpoint});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -60,28 +28,26 @@ class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
   bool _isLoading = true;
   bool _isMaximized = false;
-  final ThemeService _themeService = ThemeService();
+  final ThemeService _themeService = Get.find<ThemeService>();
 
   @override
   void initState() {
     super.initState();
-    _loadThemeSettings();
-    _checkWindowState();
+    _initializeApp();
   }
 
-  Future<void> _loadThemeSettings() async {
-    final themeMode = await _themeService.loadThemeMode();
+  // 并行执行初始化任务，提高启动速度
+  Future<void> _initializeApp() async {
+    // 并行执行主题设置加载和窗口状态检查
+    final results = await Future.wait([
+      _themeService.loadThemeMode(),
+      WindowService.isMaximized(),
+    ]);
+
     setState(() {
-      _themeMode = themeMode;
+      _themeMode = results[0] as ThemeMode;
+      _isMaximized = results[1] as bool;
       _isLoading = false;
-    });
-  }
-
-  // 检查窗口初始状态
-  Future<void> _checkWindowState() async {
-    bool isMaximized = await WindowService.isMaximized();
-    setState(() {
-      _isMaximized = isMaximized;
     });
   }
 
@@ -233,9 +199,7 @@ class _MyAppState extends State<MyApp> {
               theme: finalLightTheme,
               darkTheme: finalDarkTheme,
               themeMode: _themeMode,
-              initialRoute: widget.hasEndpoint
-                  ? '/home'
-                  : '/endpoint', // 根据是否有端点动态设置初始路由
+              initialRoute: '/home', // 始终从首页开始，初始化器已确保有端点
               getPages: appRoutes, // 使用统一的路由配置列表
               navigatorObservers: [FlutterSmartDialog.observer],
             );

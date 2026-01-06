@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/request/post_service.dart';
-import '../../api/request/discussion_service.dart';
+import '../../api/services/post_service.dart';
+import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
 import '../../api/models/post.dart';
 import '../../utils/time_formatter.dart';
 import '../../utils/snackbar_utils.dart';
-import '../widgets/post_content.dart';
-import '../widgets/reply_input.dart';
+import '../components/discussion/post_content.dart';
+import '../components/discussion/reply_input.dart';
 
 class DiscussionDetailPage extends StatefulWidget {
   const DiscussionDetailPage({super.key});

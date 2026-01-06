@@ -1,8 +1,10 @@
 import '../flarum_api.dart';
 import '../models/notification.dart' as notification_model;
+import 'package:get/get.dart';
+import '../../utils/error_handler.dart';
 
 class NotificationService {
-  final FlarumApi _api = FlarumApi();
+  final FlarumApi _api = Get.find<FlarumApi>();
 
   // 获取通知列表
   Future<List<notification_model.Notification>?> getNotifications({
@@ -38,12 +40,7 @@ class NotificationService {
       }
       return null;
     } catch (e) {
-      // 使用调试信息而非print语句，便于后续替换为日志系统
-      // ignore: avoid_print
-      assert(() {
-        print('Get notifications error: $e');
-        return true;
-      }());
+      ErrorHandler.handleError(e, 'Get notifications');
       return null;
     }
   }

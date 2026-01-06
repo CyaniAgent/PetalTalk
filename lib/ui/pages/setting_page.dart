@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 
 import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
-import '../widgets/setting_page.dart';
-import '../../api/request/auth_service.dart';
+import '../components/setting/setting_panel.dart';
+import '../../api/services/auth_service.dart';
 import '../../api/flarum_api.dart';
 
 class SettingPage extends StatefulWidget {

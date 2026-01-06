@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../api/request/discussion_service.dart';
+import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
-import '../../api/request/auth_service.dart';
+import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
-import '../widgets/discussion_card.dart';
-import '../widgets/ui_main_frame.dart';
+import '../components/discussion/discussion_card.dart';
+import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
-import 'state/main_state.dart';
+import '../../state/main_state.dart';
 
 // 主题帖列表组件
 class DiscussionList extends StatefulWidget {
@@ -163,15 +163,14 @@ class _DiscussionListState extends State<DiscussionList>
                     return DiscussionCard(
                       id: discussion.id,
                       title: discussion.title,
-                      author: _users[discussion.userId] ?? '未知用户', // 使用真实作者信息
+                      author: _users[discussion.userId] ?? '未知用户',
                       createdAt: discussion.createdAt,
                       commentCount: discussion.commentCount,
-                      viewCount: 0, // 这里需要从API响应中获取浏览数
                       isSticky: discussion.isSticky,
                       isLocked: discussion.isLocked,
                       tags: discussion.tagIds
                           .map((id) => _tags[id] ?? '标签 $id')
-                          .toList(), // 使用真实标签名称
+                          .toList(),
                       onTap: () => _gotoDiscussionDetail(discussion),
                     );
                   } else if (_hasMore) {

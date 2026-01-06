@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../pages/state/setting_state.dart';
+import '../../../state/setting_state.dart';
 
 class UiSettingPage extends StatefulWidget {
   final List<Map<String, dynamic>> settingItems;
@@ -43,17 +43,17 @@ class _UiSettingPageState extends State<UiSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
+    final double screenWidth = mediaQuery.size.width;
+    final EdgeInsets padding = mediaQuery.padding;
     final bool isWideScreen = screenWidth > wideScreenThreshold;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
         titleSpacing: 0,
-        title: Text(
-          widget.title,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        title: Text(widget.title, style: textTheme.titleMedium),
       ),
       body: isWideScreen
           ? Row(
@@ -209,7 +209,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                     title: const Text('关于'),
                   ),
                 ),
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                SizedBox(height: padding.bottom + 20),
               ],
             ),
     );
