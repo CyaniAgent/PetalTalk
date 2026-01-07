@@ -170,7 +170,7 @@ class _SettingPageState extends State<SettingPage> {
     return GestureDetector(
       onTap: () {
         _updateAccentColor(colorName);
-        Navigator.pop(context);
+        Get.back();
       },
       child: Container(
         decoration: BoxDecoration(
@@ -190,7 +190,7 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
+    final AuthService authService = Get.find<AuthService>();
 
     // 设置项列表
     final List<Map<String, dynamic>> settingItems = [
@@ -238,7 +238,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('接收新消息通知'),
               value: true,
               onChanged: (value) {
-                print('消息通知: $value');
+                // TODO: 更新消息通知设置
               },
             ),
             SwitchListTile(
@@ -246,7 +246,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('当有人@你时通知'),
               value: true,
               onChanged: (value) {
-                print('提及通知: $value');
+                // TODO: 更新提及通知设置
               },
             ),
             SwitchListTile(
@@ -254,7 +254,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('当有人回复你时通知'),
               value: true,
               onChanged: (value) {
-                print('回复通知: $value');
+                // TODO: 更新回复通知设置
               },
             ),
             SwitchListTile(
@@ -262,7 +262,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('接收系统通知'),
               value: true,
               onChanged: (value) {
-                print('系统通知: $value');
+                // TODO: 更新系统通知设置
               },
             ),
           ],
@@ -474,13 +474,13 @@ class _SettingPageState extends State<SettingPage> {
                                         actions: [
                                           TextButton(
                                             onPressed: () {
-                                              Navigator.pop(context, false);
+                                              Get.back(result: false);
                                             },
                                             child: const Text('取消'),
                                           ),
                                           TextButton(
                                             onPressed: () {
-                                              Navigator.pop(context, true);
+                                              Get.back(result: true);
                                             },
                                             style: TextButton.styleFrom(
                                               foregroundColor: Colors.red,
@@ -557,13 +557,13 @@ class _SettingPageState extends State<SettingPage> {
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pop(context, false);
+                                    Get.back(result: false);
                                   },
                                   child: const Text('取消'),
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pop(context, true);
+                                    Get.back(result: true);
                                   },
                                   style: TextButton.styleFrom(
                                     foregroundColor: Colors.red,

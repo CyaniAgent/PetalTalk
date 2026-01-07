@@ -45,7 +45,11 @@ class AppRoutes {
 
 /// 路由配置列表
 final List<GetPage> appRoutes = [
-  GetPage(name: AppRoutes.login, page: () => const LoginPage()),
+  GetPage(
+    name: AppRoutes.login,
+    page: () => const LoginPage(),
+    binding: BindingsBuilder(() { Get.put(LoginController()); }),
+  ),
   GetPage(name: AppRoutes.home, page: () => const HomePage()),
   GetPage(
     name: AppRoutes.discussionDetail,

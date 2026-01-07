@@ -14,7 +14,7 @@ publish_to: "none" # 如果你想发布到pub.dev，请删除这一行
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # 在Windows中，build-name用作产品版本和文件版本的主要、次要和补丁部分，
 # 而build-number用作构建后缀。
-version: 0.0.7+0071
+version: 0.0.7+0076
 
 environment:
   sdk: ^3.10.4
@@ -87,6 +87,7 @@ dev_dependencies:
   # `analysis_options.yaml`文件中激活。有关禁用特定lint规则和激活其他规则的信息，
   # 请参阅该文件。
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # 有关此文件的通用Dart部分的信息，请参阅以下页面：https://dart.dev/tools/pub/pubspec
 
@@ -125,3 +126,11 @@ flutter:
   #
   # 有关包依赖项字体的详细信息，
   # 请参阅https://flutter.dev/to/font-from-package
+# 应用图标配置
+flutter_launcher_icons:
+  # 为 Android 配置图标
+  android: true
+  # 为 iOS 配置图标
+  ios: true
+  # 指定图标图片路径
+  image_path: "assets/icons/logo.png"

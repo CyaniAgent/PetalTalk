@@ -18,8 +18,8 @@ class DiscussionDetailPage extends StatefulWidget {
 }
 
 class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
-  final PostService _postService = PostService();
-  final DiscussionService _discussionService = DiscussionService();
+  final PostService _postService = Get.find<PostService>();
+  final DiscussionService _discussionService = Get.find<DiscussionService>();
   Discussion? _discussion;
   final List<Post> _posts = [];
   bool _isLoading = false;
@@ -178,7 +178,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () {
-                      Navigator.pop(context);
+                      Get.back();
                     },
                   ),
                 ],
@@ -188,7 +188,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
               ReplyInput(
                 onSubmit: () {
                   // 提交回复后关闭弹窗
-                  Navigator.pop(context);
+                  Get.back();
                   _handleReply();
                 },
                 onContentChanged: (content) {

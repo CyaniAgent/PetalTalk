@@ -1,5 +1,5 @@
 /// 主题帖列表组件，显示论坛的主题帖列表
-/// 
+///
 /// 该组件支持：
 /// 1. 分页加载主题帖
 /// 2. 下拉刷新功能
@@ -28,7 +28,7 @@ class DiscussionList extends StatefulWidget {
 
 class _DiscussionListState extends State<DiscussionList>
     with AutomaticKeepAliveClientMixin<DiscussionList> {
-  final DiscussionService _discussionService = DiscussionService();
+  final DiscussionService _discussionService = Get.find<DiscussionService>();
   final List<Discussion> _discussions = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -277,12 +277,12 @@ class _HomePageState extends State<HomePage> {
 }
 
 // 个人中心页面，提取为独立组件
-class _ProfilePage extends StatelessWidget {
+class _ProfilePage extends GetView {
   const _ProfilePage();
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
+    final AuthService authService = Get.find<AuthService>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('个人中心')),
@@ -312,6 +312,8 @@ class _ProfilePage extends StatelessWidget {
                       authService.logout();
                       SnackbarUtils.showMaterialSnackbar(context, '已退出登录');
                       // 刷新页面
+                      final mainController = Get.find<UiMainController>();
+                      mainController.setSelectedIndex(0);
                       Get.offAllNamed('/home');
                     },
                     child: const Text('退出登录'),

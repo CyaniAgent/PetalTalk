@@ -16,7 +16,7 @@ class NotificationList extends StatefulWidget {
 
 class _NotificationListState extends State<NotificationList>
     with AutomaticKeepAliveClientMixin<NotificationList> {
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService = Get.find<NotificationService>();
   final List<notification_model.Notification> _notifications = [];
   bool _isLoading = false;
   bool _hasMore = true;

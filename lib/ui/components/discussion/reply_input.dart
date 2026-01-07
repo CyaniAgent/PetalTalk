@@ -75,7 +75,6 @@ class _ReplyInputState extends State<ReplyInput> {
                 icon: const Icon(Icons.emoji_emotions),
                 onPressed: () {
                   // TODO: 表情选择
-                  print('Emoji button tapped');
                 },
               ),
             ),
@@ -92,21 +91,18 @@ class _ReplyInputState extends State<ReplyInput> {
                     icon: const Icon(Icons.image),
                     onPressed: () {
                       // TODO: 图片上传
-                      print('Image upload button tapped');
                     },
                   ),
                   IconButton(
                     icon: const Icon(Icons.link),
                     onPressed: () {
                       // TODO: 插入链接
-                      print('Insert link button tapped');
                     },
                   ),
                   IconButton(
                     icon: const Icon(Icons.code),
                     onPressed: () {
                       // TODO: 插入代码
-                      print('Insert code button tapped');
                     },
                   ),
                 ],

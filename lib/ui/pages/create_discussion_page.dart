@@ -15,7 +15,7 @@ class _CreateDiscussionPageState extends State<CreateDiscussionPage> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   bool _isSubmitting = false;
-  final DiscussionService _discussionService = DiscussionService();
+  final DiscussionService _discussionService = Get.find<DiscussionService>();
 
   @override
   void dispose() {

@@ -14,9 +14,15 @@ class AboutPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 应用图标
-              CircleAvatar(
-                radius: 128,
-                backgroundImage: const AssetImage('assets/icons/logo.png'),
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  image: const DecorationImage(
+                    image: AssetImage('assets/icons/logo.png'),
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -26,7 +32,7 @@ class AboutPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Text('v0.0.1', style: Theme.of(context).textTheme.bodyMedium),
+              Text('v0.0.7', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 32),
 
               // 开发者信息

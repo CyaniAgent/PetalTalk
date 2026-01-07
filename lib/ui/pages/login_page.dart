@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:petal_talk/state/main_state.dart';
 
 import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 
 // 登录控制器，管理登录状态
 class LoginController extends GetxController {
-  final _authService = AuthService();
+  final _authService = Get.find<AuthService>();
 
   // 使用GetX的响应式变量
   final isLoading = false.obs;
@@ -18,10 +19,10 @@ class LoginController extends GetxController {
   final passwordController = TextEditingController();
 
   @override
-  void dispose() {
+  void onClose() {
     identificationController.dispose();
     passwordController.dispose();
-    super.dispose();
+    super.onClose();
   }
 
   // 处理登录
@@ -38,11 +39,14 @@ class LoginController extends GetxController {
       isLoading.value = false;
 
       if (result != null) {
-        // 登录成功，跳转到首页
+        // 登录成功，重置侧边栏选中项为首页
+        final mainController = Get.find<UiMainController>();
+        mainController.setSelectedIndex(0);
+        // 跳转到首页
         Get.offAllNamed('/home');
       } else {
         // 登录失败，显示错误信息
-        Get.snackbar('登录失败', '用户名或密码错误', snackPosition: SnackPosition.BOTTOM);
+        SnackbarUtils.showMaterialSnackbar(Get.context!, '用户名或密码错误');
       }
     }
   }
@@ -58,9 +62,10 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 使用Get.put创建并获取控制器实例
-    final controller = Get.put(LoginController());
     final textTheme = Theme.of(context).textTheme;
+    final controller = Get.isRegistered<LoginController>()
+        ? Get.find<LoginController>()
+        : Get.put(LoginController());
 
     return Scaffold(
       appBar: AppBar(
@@ -101,7 +106,7 @@ class LoginPage extends StatelessWidget {
                           decoration: InputDecoration(
                             labelText: '用户名或邮箱',
                             hintText: '请输入用户名或邮箱',
-                            prefixIcon: const Icon(Icons.person),
+                            prefixIcon: const Icon(Icons.person_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -122,7 +127,7 @@ class LoginPage extends StatelessWidget {
                           decoration: InputDecoration(
                             labelText: '密码',
                             hintText: '请输入密码',
-                            prefixIcon: const Icon(Icons.lock),
+                            prefixIcon: const Icon(Icons.lock_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
