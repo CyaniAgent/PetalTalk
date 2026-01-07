@@ -1,3 +1,12 @@
+/// 主题帖列表组件，显示论坛的主题帖列表
+/// 
+/// 该组件支持：
+/// 1. 分页加载主题帖
+/// 2. 下拉刷新功能
+/// 3. 上拉加载更多
+/// 4. 自动保持组件状态
+library;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -10,7 +19,6 @@ import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
 import '../../state/main_state.dart';
 
-// 主题帖列表组件
 class DiscussionList extends StatefulWidget {
   const DiscussionList({super.key});
 
@@ -101,7 +109,7 @@ class _DiscussionListState extends State<DiscussionList>
       setState(() {
         _isLoading = false;
       });
-      Get.snackbar('加载失败', '获取主题帖列表失败', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '获取主题帖列表失败');
     }
   }
 
@@ -220,7 +228,7 @@ class _DiscussionListState extends State<DiscussionList>
 
 // 主页面，使用UiMainFrame整合导航
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -270,7 +278,7 @@ class _HomePageState extends State<HomePage> {
 
 // 个人中心页面，提取为独立组件
 class _ProfilePage extends StatelessWidget {
-  const _ProfilePage({Key? key}) : super(key: key);
+  const _ProfilePage();
 
   @override
   Widget build(BuildContext context) {
@@ -302,11 +310,7 @@ class _ProfilePage extends StatelessWidget {
                     onPressed: () {
                       // 退出登录
                       authService.logout();
-                      Get.snackbar(
-                        '提示',
-                        '已退出登录',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
+                      SnackbarUtils.showMaterialSnackbar(context, '已退出登录');
                       // 刷新页面
                       Get.offAllNamed('/home');
                     },

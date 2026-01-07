@@ -8,7 +8,7 @@ import '../../utils/time_formatter.dart';
 
 // 通知列表组件
 class NotificationList extends StatefulWidget {
-  const NotificationList({Key? key}) : super(key: key);
+  const NotificationList({super.key});
 
   @override
   State<NotificationList> createState() => _NotificationListState();
@@ -57,7 +57,7 @@ class _NotificationListState extends State<NotificationList>
         if (isRefresh) {
           _hasMore = false;
         }
-        Get.snackbar('加载失败', '获取通知列表失败', snackPosition: SnackPosition.BOTTOM);
+        SnackbarUtils.showMaterialSnackbar(context, '获取通知列表失败');
       }
     });
   }

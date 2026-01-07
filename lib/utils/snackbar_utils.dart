@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class SnackbarUtils {
   /// 显示MD3风格的提示
-  static void showMaterialSnackbar(BuildContext context, String message, {
+  static void showMaterialSnackbar(
+    BuildContext context,
+    String message, {
     String actionLabel = '',
     VoidCallback? onAction,
     Duration duration = const Duration(seconds: 2),
@@ -11,17 +13,12 @@ class SnackbarUtils {
       SnackBar(
         content: Text(message),
         action: actionLabel.isNotEmpty && onAction != null
-            ? SnackBarAction(
-                label: actionLabel,
-                onPressed: onAction,
-              )
+            ? SnackBarAction(label: actionLabel, onPressed: onAction)
             : null,
         duration: duration,
         // MD3风格配置
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
       ),
     );

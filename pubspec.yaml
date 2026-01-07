@@ -14,7 +14,7 @@ publish_to: "none" # 如果你想发布到pub.dev，请删除这一行
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # 在Windows中，build-name用作产品版本和文件版本的主要、次要和补丁部分，
 # 而build-number用作构建后缀。
-version: 0.0.7+3
+version: 0.0.7+0071
 
 environment:
   sdk: ^3.10.4

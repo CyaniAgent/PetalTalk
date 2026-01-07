@@ -96,7 +96,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       });
       _loadPosts();
     } else {
-      Get.snackbar('加载失败', '获取主题帖详情失败', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '获取主题帖详情失败');
       Get.back();
     }
   }
@@ -146,7 +146,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
         _posts.addAll(newPosts);
       });
     } else {
-      Get.snackbar('加载失败', '获取帖子列表失败', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '获取帖子列表失败');
     }
   }
 
@@ -262,9 +262,9 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
         );
       });
 
-      Get.snackbar('回复成功', '你的回复已发布', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '你的回复已发布');
     } else {
-      Get.snackbar('回复失败', '发布回复失败', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '发布回复失败');
     }
   }
 

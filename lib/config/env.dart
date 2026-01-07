@@ -1,4 +1,5 @@
 /// 环境类型枚举
+library;
 enum Environment {
   /// 开发环境
   development,

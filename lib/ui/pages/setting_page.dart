@@ -30,8 +30,6 @@ class _SettingPageState extends State<SettingPage> {
   bool _useDynamicColor = true;
   String _accentColor = 'blue';
   double _fontSize = 16.0;
-  bool _compactLayout = false;
-  bool _showAvatars = true;
 
   // 加载当前设置
   Future<void> _loadCurrentSettings() async {
@@ -39,16 +37,12 @@ class _SettingPageState extends State<SettingPage> {
     final useDynamicColor = await _appearanceService.loadUseDynamicColor();
     final accentColor = await _appearanceService.loadAccentColor();
     final fontSize = await _appearanceService.loadFontSize();
-    final compactLayout = await _appearanceService.loadCompactLayout();
-    final showAvatars = await _appearanceService.loadShowAvatars();
 
     setState(() {
       _isDarkMode = themeMode != ThemeMode.light;
       _useDynamicColor = useDynamicColor;
       _accentColor = accentColor;
       _fontSize = fontSize;
-      _compactLayout = compactLayout;
-      _showAvatars = showAvatars;
     });
   }
 
@@ -456,7 +450,12 @@ class _SettingPageState extends State<SettingPage> {
                                     await _api.switchEndpoint(endpoint);
                                     // 重新加载当前端点信息
                                     setState(() {});
-                                    Get.snackbar('成功', '已切换到新端点');
+                                    if (mounted) {
+                                      SnackbarUtils.showMaterialSnackbar(
+                                        context,
+                                        '已切换到新端点',
+                                      );
+                                    }
                                   },
                                   icon: const Icon(Icons.swap_horiz),
                                   label: const Text('切换'),
@@ -483,10 +482,10 @@ class _SettingPageState extends State<SettingPage> {
                                             onPressed: () {
                                               Navigator.pop(context, true);
                                             },
-                                            child: const Text('删除'),
                                             style: TextButton.styleFrom(
                                               foregroundColor: Colors.red,
                                             ),
+                                            child: const Text('删除'),
                                           ),
                                         ],
                                       );
@@ -497,7 +496,12 @@ class _SettingPageState extends State<SettingPage> {
                                     await _api.deleteEndpoint(endpoint);
                                     // 重新加载端点列表
                                     setState(() {});
-                                    Get.snackbar('成功', '已删除端点');
+                                    if (mounted) {
+                                      SnackbarUtils.showMaterialSnackbar(
+                                        context,
+                                        '已删除端点',
+                                      );
+                                    }
                                   }
                                 },
                                 icon: const Icon(Icons.delete),
@@ -507,7 +511,7 @@ class _SettingPageState extends State<SettingPage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
             ],
@@ -561,10 +565,10 @@ class _SettingPageState extends State<SettingPage> {
                                   onPressed: () {
                                     Navigator.pop(context, true);
                                   },
-                                  child: const Text('删除'),
                                   style: TextButton.styleFrom(
                                     foregroundColor: Colors.red,
                                   ),
+                                  child: const Text('删除'),
                                 ),
                               ],
                             );
@@ -577,7 +581,12 @@ class _SettingPageState extends State<SettingPage> {
                           authService.logout();
                           // 跳转到端点选择页面
                           Get.offAllNamed('/endpoint');
-                          Get.snackbar('成功', '已删除所有数据');
+                          if (mounted) {
+                            SnackbarUtils.showMaterialSnackbar(
+                              context,
+                              '已删除所有数据',
+                            );
+                          }
                         }
                       },
                       icon: const Icon(Icons.delete_forever),

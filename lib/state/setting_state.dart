@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '/utils/snackbar_utils.dart';
 
 class UiSettingController extends GetxController {
   RxBool userLogin = false.obs;
@@ -13,6 +14,6 @@ class UiSettingController extends GetxController {
   /// 退出登录
   void loginOut() {
     // 这里可以添加退出登录的逻辑
-    Get.snackbar('提示', '退出登录');
+    SnackbarUtils.showMaterialSnackbar(Get.context!, '退出登录成功');
   }
 }

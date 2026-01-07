@@ -1,16 +1,16 @@
+/// 应用路由配置
+library;
+
 import 'package:get/get.dart';
 
 import '../ui/pages/login_page.dart';
 import '../ui/pages/home_page.dart';
 import '../ui/pages/discussion_detail_page.dart';
-import '../ui/pages/theme_mode_page.dart';
 import '../ui/pages/about_page.dart';
 import '../ui/pages/setting_page.dart';
 import '../ui/pages/endpoint_selection_page.dart';
 import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
-
-/// 应用路由配置
 class AppRoutes {
   /// 初始路由
   static const String initialRoute = '/home';
@@ -55,7 +55,6 @@ final List<GetPage> appRoutes = [
     name: AppRoutes.createDiscussion,
     page: () => const CreateDiscussionPage(),
   ),
-  GetPage(name: AppRoutes.themeMode, page: () => const ThemeModePage()),
   GetPage(name: AppRoutes.about, page: () => const AboutPage()),
   GetPage(name: AppRoutes.settings, page: () => const SettingPage()),
   GetPage(name: AppRoutes.endpoint, page: () => const EndpointSelectionPage()),

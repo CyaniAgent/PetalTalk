@@ -1,3 +1,7 @@
+/// PetalTalk应用主入口文件
+/// 负责应用的初始化和启动
+library;
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,6 +13,7 @@ import 'global_services/window_service.dart';
 import 'global_services/theme_service.dart';
 import 'config/routes.dart';
 
+/// 应用主入口函数
 void main() async {
   // 初始化应用
   await AppInitializer.init();
@@ -17,17 +22,24 @@ void main() async {
   runApp(const MyApp());
 }
 
+/// 应用根组件，管理应用的主题和窗口状态
 class MyApp extends StatefulWidget {
+  /// 创建MyApp实例
   const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
+/// MyApp的状态管理类
 class _MyAppState extends State<MyApp> {
+  /// 当前主题模式
   ThemeMode _themeMode = ThemeMode.system;
+  /// 初始化加载状态
   bool _isLoading = true;
+  /// 窗口是否最大化
   bool _isMaximized = false;
+  /// 主题服务实例
   final ThemeService _themeService = Get.find<ThemeService>();
 
   @override
@@ -36,9 +48,9 @@ class _MyAppState extends State<MyApp> {
     _initializeApp();
   }
 
-  // 并行执行初始化任务，提高启动速度
+  /// 并行执行初始化任务，提高启动速度
+  /// 同时加载主题设置和窗口状态
   Future<void> _initializeApp() async {
-    // 并行执行主题设置加载和窗口状态检查
     final results = await Future.wait([
       _themeService.loadThemeMode(),
       WindowService.isMaximized(),
@@ -51,7 +63,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  // 切换窗口最大化/还原
+  /// 切换窗口最大化/还原状态
   Future<void> _toggleMaximize() async {
     await WindowService.toggleMaximize();
     setState(() {

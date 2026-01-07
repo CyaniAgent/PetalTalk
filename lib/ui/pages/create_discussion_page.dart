@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../api/services/discussion_service.dart';
+import '/api/services/discussion_service.dart';
+import '/utils/snackbar_utils.dart';
 
 class CreateDiscussionPage extends StatefulWidget {
   const CreateDiscussionPage({super.key});
@@ -41,11 +42,15 @@ class _CreateDiscussionPageState extends State<CreateDiscussionPage> {
 
       if (result != null) {
         // 发帖成功，返回首页并刷新
-        Get.snackbar('提示', '发帖成功', snackPosition: SnackPosition.BOTTOM);
+        if (mounted) {
+          SnackbarUtils.showMaterialSnackbar(context, '发帖成功');
+        }
         Get.offAllNamed('/home');
       } else {
         // 发帖失败
-        Get.snackbar('提示', '发帖失败', snackPosition: SnackPosition.BOTTOM);
+        if (mounted) {
+          SnackbarUtils.showMaterialSnackbar(context, '发帖失败');
+        }
       }
     }
   }

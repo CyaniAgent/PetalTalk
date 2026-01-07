@@ -1,3 +1,14 @@
+/// Flarum API 客户端，负责与 Flarum 后端进行通信
+/// 
+/// 该类提供了：
+/// 1. 基于 Dio 的 HTTP 客户端封装
+/// 2. 多端点管理功能
+/// 3. 认证令牌管理
+/// 4. 统一的请求方法（GET, POST, PUT, DELETE, PATCH）
+/// 
+/// 使用单例模式，确保在应用中只有一个 API 客户端实例
+library;
+
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
@@ -6,26 +17,49 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 
+/// Flarum API 客户端类，封装了与 Flarum 后端通信的所有功能
 class FlarumApi {
+  /// 单例实例，确保全局唯一
   static final FlarumApi _instance = FlarumApi._internal();
+
+  /// 工厂构造函数，返回单例实例
   factory FlarumApi() => _instance;
 
+  /// 内部构造函数，初始化Dio客户端
   FlarumApi._internal() {
     _initDio();
   }
 
+  /// Dio HTTP客户端实例
   late Dio _dio;
+
+  /// 当前认证令牌
   String? _token;
+
+  /// 当前API基础URL
   String? _baseUrl = 'https://flarum.imikufans.cn';
 
-  // 为特定端点生成唯一的存储键
+  /// 为特定端点生成唯一的存储键
+  ///
+  /// 参数：
+  /// - endpoint: 端点URL
+  /// - key: 原始存储键
+  ///
+  /// 返回值：
+  /// - String: 带有端点标识的唯一存储键
   String _getEndpointKey(String endpoint, String key) {
     // 使用端点的哈希值作为唯一标识，确保不同端点的数据隔离
     final endpointHash = endpoint.hashCode.toString();
-    return '${Constants.endpointDataPrefix}$endpointHash\_$key';
+    return '${Constants.endpointDataPrefix}$endpointHash$key';
   }
 
-  // 初始化Dio
+  /// 初始化Dio HTTP客户端
+  ///
+  /// 配置内容包括：
+  /// 1. 基本选项（基础URL、超时时间、请求头）
+  /// 2. HTTP/2适配器
+  /// 3. Cookie管理器
+  /// 4. 认证拦截器
   void _initDio() {
     _dio = Dio(
       BaseOptions(
@@ -66,29 +100,43 @@ class FlarumApi {
     );
   }
 
-  // 设置基础URL
+  /// 设置API基础URL
+  ///
+  /// 参数：
+  /// - url: 新的基础URL
   void setBaseUrl(String url) {
     _baseUrl = url;
     _dio.options.baseUrl = url;
   }
 
-  // 设置认证令牌
+  /// 设置认证令牌
+  ///
+  /// 参数：
+  /// - token: 新的认证令牌
   void setToken(String token) {
     _token = token;
   }
 
-  // 清除认证令牌
+  /// 清除当前认证令牌
   void clearToken() {
     _token = null;
   }
 
-  // 获取当前令牌
+  /// 获取当前认证令牌
   String? get token => _token;
 
-  // 获取当前基础URL
+  /// 获取当前API基础URL
   String? get baseUrl => _baseUrl;
 
-  // 保存端点到本地存储
+  /// 保存端点到本地存储
+  ///
+  /// 参数：
+  /// - url: 要保存的端点URL
+  ///
+  /// 该方法会：
+  /// 1. 将端点添加到端点列表（如果不存在）
+  /// 2. 将该端点设置为当前端点
+  /// 3. 更新Dio客户端的基础URL
   Future<void> saveEndpoint(String url) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -106,7 +154,12 @@ class FlarumApi {
     setBaseUrl(url);
   }
 
-  // 从本地存储加载端点
+  /// 从本地存储加载端点配置
+  ///
+  /// 该方法会：
+  /// 1. 读取当前端点配置
+  /// 2. 如果存在当前端点，使用该端点并加载对应的认证令牌
+  /// 3. 如果不存在，使用默认端点
   Future<void> loadEndpoint() async {
     final prefs = await SharedPreferences.getInstance();
     final currentEndpoint = prefs.getString(Constants.currentEndpointKey);
@@ -120,13 +173,24 @@ class FlarumApi {
     }
   }
 
-  // 获取所有保存的端点
+  /// 获取所有保存的端点列表
+  ///
+  /// 返回值：
+  /// - `Future<List<String>>`: 包含所有保存端点URL的列表
   Future<List<String>> getEndpoints() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList(Constants.endpointsKey) ?? [];
   }
 
-  // 切换到指定端点
+  /// 切换到指定端点
+  ///
+  /// 参数：
+  /// - url: 要切换到的端点URL
+  ///
+  /// 该方法会：
+  /// 1. 保存当前端点的认证令牌
+  /// 2. 切换到新端点
+  /// 3. 加载新端点的认证令牌
   Future<void> switchEndpoint(String url) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -143,7 +207,15 @@ class FlarumApi {
     await loadToken(url);
   }
 
-  // 删除指定端点
+  /// 删除指定端点
+  ///
+  /// 参数：
+  /// - url: 要删除的端点URL
+  ///
+  /// 该方法会：
+  /// 1. 从端点列表中移除指定端点
+  /// 2. 如果删除的是当前端点，切换到其他端点或默认端点
+  /// 3. 清除该端点的所有数据
   Future<void> deleteEndpoint(String url) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -172,14 +244,21 @@ class FlarumApi {
     await clearEndpointData(url);
   }
 
-  // 保存认证令牌到指定端点
+  /// 保存认证令牌到指定端点
+  ///
+  /// 参数：
+  /// - endpoint: 端点URL
+  /// - token: 要保存的认证令牌
   Future<void> saveToken(String endpoint, String token) async {
     final prefs = await SharedPreferences.getInstance();
     final tokenKey = _getEndpointKey(endpoint, Constants.tokenKey);
     await prefs.setString(tokenKey, token);
   }
 
-  // 从指定端点加载认证令牌
+  /// 从指定端点加载认证令牌
+  ///
+  /// 参数：
+  /// - endpoint: 端点URL
   Future<void> loadToken(String endpoint) async {
     final prefs = await SharedPreferences.getInstance();
     final tokenKey = _getEndpointKey(endpoint, Constants.tokenKey);
@@ -187,7 +266,10 @@ class FlarumApi {
     _token = token;
   }
 
-  // 清除指定端点的认证令牌
+  /// 清除指定端点的认证令牌
+  ///
+  /// 参数：
+  /// - endpoint: 端点URL
   Future<void> clearTokenForEndpoint(String endpoint) async {
     final prefs = await SharedPreferences.getInstance();
     final tokenKey = _getEndpointKey(endpoint, Constants.tokenKey);
@@ -197,7 +279,10 @@ class FlarumApi {
     }
   }
 
-  // 清除指定端点的所有数据
+  /// 清除指定端点的所有数据
+  ///
+  /// 参数：
+  /// - endpoint: 端点URL
   Future<void> clearEndpointData(String endpoint) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -218,7 +303,9 @@ class FlarumApi {
     }
   }
 
-  // 清除所有端点数据
+  /// 清除所有端点数据
+  ///
+  /// 该方法会清除所有端点的配置和认证令牌
   Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -239,7 +326,15 @@ class FlarumApi {
     setBaseUrl(_baseUrl!);
   }
 
-  // GET请求
+  /// 发送GET请求
+  ///
+  /// 参数：
+  /// - path: 请求路径（相对于baseUrl）
+  /// - queryParameters: 查询参数
+  /// - options: 请求选项
+  ///
+  /// 返回值：
+  /// - `Future<Response>`: 包含响应数据的Response对象
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -252,7 +347,16 @@ class FlarumApi {
     );
   }
 
-  // POST请求
+  /// 发送POST请求
+  ///
+  /// 参数：
+  /// - path: 请求路径（相对于baseUrl）
+  /// - data: 请求体数据
+  /// - queryParameters: 查询参数
+  /// - options: 请求选项
+  ///
+  /// 返回值：
+  /// - `Future<Response>`: 包含响应数据的Response对象
   Future<Response> post(
     String path, {
     dynamic data,
@@ -267,7 +371,16 @@ class FlarumApi {
     );
   }
 
-  // PUT请求
+  /// 发送PUT请求
+  ///
+  /// 参数：
+  /// - path: 请求路径（相对于baseUrl）
+  /// - data: 请求体数据
+  /// - queryParameters: 查询参数
+  /// - options: 请求选项
+  ///
+  /// 返回值：
+  /// - `Future<Response>`: 包含响应数据的Response对象
   Future<Response> put(
     String path, {
     dynamic data,
@@ -282,7 +395,15 @@ class FlarumApi {
     );
   }
 
-  // DELETE请求
+  /// 发送DELETE请求
+  ///
+  /// 参数：
+  /// - path: 请求路径（相对于baseUrl）
+  /// - queryParameters: 查询参数
+  /// - options: 请求选项
+  ///
+  /// 返回值：
+  /// - `Future<Response>`: 包含响应数据的Response对象
   Future<Response> delete(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -295,7 +416,16 @@ class FlarumApi {
     );
   }
 
-  // PATCH请求
+  /// 发送PATCH请求
+  ///
+  /// 参数：
+  /// - path: 请求路径（相对于baseUrl）
+  /// - data: 请求体数据
+  /// - queryParameters: 查询参数
+  /// - options: 请求选项
+  ///
+  /// 返回值：
+  /// - `Future<Response>`: 包含响应数据的Response对象
   Future<Response> patch(
     String path, {
     dynamic data,

@@ -5,22 +5,19 @@ class AppearanceService {
   static const String _useDynamicColorKey = 'use_dynamic_color';
   static const String _accentColorKey = 'accent_color';
   static const String _fontSizeKey = 'font_size';
-  static const String _layoutPreferenceKey = 'layout_preference';
   static const String _themeModeKey = 'theme_mode';
-  static const String _compactLayoutKey = 'compact_layout';
-  static const String _showAvatarsKey = 'show_avatars';
 
   // 加载主题模式
   Future<ThemeMode> loadThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // 使用更安全的方式获取存储值，避免直接类型转换错误
     String themeModeValue = 'system'; // 默认值
-    
+
     try {
       // 尝试获取值，不指定类型
       final value = prefs.get(_themeModeKey);
-      
+
       if (value is String) {
         // 如果是String类型，直接使用
         themeModeValue = value;
@@ -48,7 +45,7 @@ class AppearanceService {
       // 捕获任何异常，使用默认值并更新存储
       await prefs.setString(_themeModeKey, themeModeValue);
     }
-    
+
     switch (themeModeValue) {
       case 'light':
         return ThemeMode.light;
@@ -72,7 +69,6 @@ class AppearanceService {
         themeModeString = 'dark';
         break;
       case ThemeMode.system:
-      default:
         themeModeString = 'system';
         break;
     }
@@ -96,7 +92,11 @@ class AppearanceService {
   }
 
   // 安全获取String值
-  String _safeGetString(SharedPreferences prefs, String key, String defaultValue) {
+  String _safeGetString(
+    SharedPreferences prefs,
+    String key,
+    String defaultValue,
+  ) {
     try {
       final value = prefs.get(key);
       if (value is String) {
@@ -109,7 +109,11 @@ class AppearanceService {
   }
 
   // 安全获取double值
-  double _safeGetDouble(SharedPreferences prefs, String key, double defaultValue) {
+  double _safeGetDouble(
+    SharedPreferences prefs,
+    String key,
+    double defaultValue,
+  ) {
     try {
       final value = prefs.get(key);
       if (value is double) {
@@ -158,41 +162,5 @@ class AppearanceService {
   Future<void> saveFontSize(double fontSize) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontSizeKey, fontSize);
-  }
-
-  // 加载紧凑布局
-  Future<bool> loadCompactLayout() async {
-    final prefs = await SharedPreferences.getInstance();
-    return _safeGetBool(prefs, _compactLayoutKey, false);
-  }
-
-  // 保存紧凑布局
-  Future<void> saveCompactLayout(bool compactLayout) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_compactLayoutKey, compactLayout);
-  }
-
-  // 加载是否显示头像
-  Future<bool> loadShowAvatars() async {
-    final prefs = await SharedPreferences.getInstance();
-    return _safeGetBool(prefs, _showAvatarsKey, true);
-  }
-
-  // 保存是否显示头像
-  Future<void> saveShowAvatars(bool showAvatars) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_showAvatarsKey, showAvatars);
-  }
-
-  // 加载布局偏好
-  Future<String> loadLayoutPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    return _safeGetString(prefs, _layoutPreferenceKey, 'default');
-  }
-
-  // 保存布局偏好
-  Future<void> saveLayoutPreference(String layoutPreference) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_layoutPreferenceKey, layoutPreference);
   }
 }

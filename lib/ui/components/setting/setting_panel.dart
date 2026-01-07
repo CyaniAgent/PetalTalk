@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '/utils/snackbar_utils.dart';
 
 import '../../../state/setting_state.dart';
 
@@ -11,13 +12,13 @@ class UiSettingPage extends StatefulWidget {
   final VoidCallback? onAbout;
 
   const UiSettingPage({
-    Key? key,
+    super.key,
     required this.settingItems,
     this.title = '设置',
     this.showLogoutButton = false,
     this.onLogout,
     this.onAbout,
-  }) : super(key: key);
+  });
 
   @override
   State<UiSettingPage> createState() => _UiSettingPageState();
@@ -82,7 +83,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         if (widget.onAbout != null) {
                           widget.onAbout!();
                         } else {
-                          Get.snackbar('提示', '关于');
+                          SnackbarUtils.showMaterialSnackbar(context, '关于');
                         }
                       }
                       // 处理未登录状态下的关于
@@ -90,7 +91,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         if (widget.onAbout != null) {
                           widget.onAbout!();
                         } else {
-                          Get.snackbar('提示', '关于');
+                          SnackbarUtils.showMaterialSnackbar(context, '关于');
                         }
                       }
                     },
@@ -107,7 +108,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                               : Icon(item['icon'], fill: 0.0),
                           label: Text(item['title']),
                         );
-                      }).toList(),
+                      }),
                       // 退出登录按钮 - 仅在登录状态下显示
                       if (settingController.userLogin.value &&
                           widget.showLogoutButton)
@@ -186,9 +187,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       ),
                       elevation: 2,
                       child: ListTile(
-                        onTap: widget.onLogout != null
-                            ? widget.onLogout
-                            : settingController.loginOut,
+                        onTap: widget.onLogout ?? settingController.loginOut,
                         leading: const Icon(Icons.logout_outlined),
                         title: const Text('退出登录'),
                       ),
@@ -202,9 +201,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   ),
                   elevation: 2,
                   child: ListTile(
-                    onTap: widget.onAbout != null
-                        ? widget.onAbout
-                        : () => Get.toNamed('/about'),
+                    onTap: widget.onAbout ?? () => Get.toNamed('/about'),
                     leading: const Icon(Icons.info_outlined),
                     title: const Text('关于'),
                   ),

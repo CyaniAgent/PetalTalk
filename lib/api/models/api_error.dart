@@ -1,4 +1,5 @@
 /// API错误模型
+library;
 class ApiError {
   final String message;
   final int? statusCode;

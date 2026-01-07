@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../api/flarum_api.dart';
+import '/api/flarum_api.dart';
+import '/utils/snackbar_utils.dart';
 
 class EndpointSelectionPage extends StatefulWidget {
   const EndpointSelectionPage({super.key});
@@ -27,14 +28,14 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
     final endpoint = _endpointController.text.trim();
 
     if (endpoint.isEmpty) {
-      Get.snackbar('提示', '请输入端点URL', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '请输入端点URL');
       return;
     }
 
     // 验证URL格式
     final uri = Uri.tryParse(endpoint);
     if (uri == null || !uri.hasAbsolutePath) {
-      Get.snackbar('提示', '请输入有效的URL', snackPosition: SnackPosition.BOTTOM);
+      SnackbarUtils.showMaterialSnackbar(context, '请输入有效的URL');
       return;
     }
 

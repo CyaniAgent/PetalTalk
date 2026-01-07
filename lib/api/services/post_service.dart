@@ -1,11 +1,30 @@
+/// 帖子服务，负责处理帖子相关的API操作
+/// 
+/// 该服务提供：
+/// 1. 获取帖子列表
+/// 2. 获取单个帖子
+/// 3. 获取主题帖的所有帖子
+/// 4. 回复主题帖
+/// 5. 更新帖子
+library;
+
 import '../flarum_api.dart';
 import 'package:get/get.dart';
 import '../../utils/error_handler.dart';
 
+/// 帖子服务类，处理帖子相关的所有API操作
 class PostService {
+  /// Flarum API客户端实例
   final FlarumApi _api = Get.find<FlarumApi>();
 
-  // 获取帖子列表
+  /// 获取帖子列表
+  /// 
+  /// 参数：
+  /// - offset: 偏移量，用于分页
+  /// - limit: 每页数量，默认20
+  /// 
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含帖子列表的响应数据，失败返回null
   Future<Map<String, dynamic>?> getPosts({
     int offset = 0,
     int limit = 20,
@@ -26,7 +45,13 @@ class PostService {
     }
   }
 
-  // 获取单个帖子
+  /// 获取单个帖子详情
+  /// 
+  /// 参数：
+  /// - id: 帖子ID
+  /// 
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含帖子详情的响应数据，失败返回null
   Future<Map<String, dynamic>?> getPost(String id) async {
     try {
       final response = await _api.get('/api/posts/$id');
@@ -41,7 +66,15 @@ class PostService {
     }
   }
 
-  // 获取主题帖的所有帖子
+  /// 获取主题帖的所有帖子
+  /// 
+  /// 参数：
+  /// - discussionId: 主题帖ID
+  /// - offset: 偏移量，用于分页
+  /// - limit: 每页数量，默认20
+  /// 
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含帖子列表的响应数据，失败返回null
   Future<Map<String, dynamic>?> getPostsForDiscussion(
     String discussionId, {
     int offset = 0,
@@ -67,7 +100,14 @@ class PostService {
     }
   }
 
-  // 回复主题帖
+  /// 回复主题帖
+  /// 
+  /// 参数：
+  /// - discussionId: 主题帖ID
+  /// - content: 回复内容
+  /// 
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含回复结果的响应数据，失败返回null
   Future<Map<String, dynamic>?> replyToDiscussion({
     required String discussionId,
     required String content,
@@ -98,7 +138,14 @@ class PostService {
     }
   }
 
-  // 更新帖子
+  /// 更新帖子
+  /// 
+  /// 参数：
+  /// - id: 帖子ID
+  /// - content: 更新后的内容
+  /// 
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含更新结果的响应数据，失败返回null
   Future<Map<String, dynamic>?> updatePost({
     required String id,
     required String content,

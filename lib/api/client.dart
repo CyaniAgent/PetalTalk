@@ -1,9 +1,10 @@
+/// 统一的Dio客户端封装
+library;
+
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
-
-/// 统一的Dio客户端封装
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
