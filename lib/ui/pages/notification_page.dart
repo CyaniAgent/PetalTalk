@@ -40,26 +40,28 @@ class _NotificationListState extends State<NotificationList>
       offset: isRefresh ? 0 : _offset,
     );
 
-    setState(() {
-      _isLoading = false;
-      if (notifications != null) {
-        if (isRefresh) {
-          _notifications.clear();
-          _notifications.addAll(notifications);
-          _offset = notifications.length;
-          _hasMore = notifications.isNotEmpty;
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (notifications != null) {
+          if (isRefresh) {
+            _notifications.clear();
+            _notifications.addAll(notifications);
+            _offset = notifications.length;
+            _hasMore = notifications.isNotEmpty;
+          } else {
+            _notifications.addAll(notifications);
+            _offset += notifications.length;
+            _hasMore = notifications.isNotEmpty;
+          }
         } else {
-          _notifications.addAll(notifications);
-          _offset += notifications.length;
-          _hasMore = notifications.isNotEmpty;
+          if (isRefresh) {
+            _hasMore = false;
+          }
+          SnackbarUtils.showMaterialSnackbar(context, '获取通知列表失败');
         }
-      } else {
-        if (isRefresh) {
-          _hasMore = false;
-        }
-        SnackbarUtils.showMaterialSnackbar(context, '获取通知列表失败');
-      }
-    });
+      });
+    }
   }
 
   // 下拉刷新
@@ -156,7 +158,9 @@ class _NotificationListState extends State<NotificationList>
                   } else if (_hasMore) {
                     // 异步加载更多
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _handleLoadMore();
+                      if (mounted) {
+                        _handleLoadMore();
+                      }
                     });
                     return const Padding(
                       padding: EdgeInsets.all(16),
