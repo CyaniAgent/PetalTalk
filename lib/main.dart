@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 import 'core/initializer.dart';
 import 'global_services/window_service.dart';
@@ -35,10 +36,13 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   /// 当前主题模式
   ThemeMode _themeMode = ThemeMode.system;
+
   /// 初始化加载状态
   bool _isLoading = true;
+
   /// 窗口是否最大化
   bool _isMaximized = false;
+
   /// 主题服务实例
   final ThemeService _themeService = Get.find<ThemeService>();
 
@@ -75,7 +79,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const MaterialApp(
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        home: Scaffold(body: Center(child: LoadingIndicatorM3E())),
       );
     }
 
@@ -89,9 +93,7 @@ class _MyAppState extends State<MyApp> {
           builder: (context, AsyncSnapshot<List<ThemeData>> snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const MaterialApp(
-                home: Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                ),
+                home: Scaffold(body: Center(child: LoadingIndicatorM3E())),
               );
             }
 

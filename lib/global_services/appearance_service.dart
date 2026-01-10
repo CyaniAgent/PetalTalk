@@ -155,12 +155,14 @@ class AppearanceService {
   // 加载字体大小
   Future<double> loadFontSize() async {
     final prefs = await SharedPreferences.getInstance();
-    return _safeGetDouble(prefs, _fontSizeKey, 16.0);
+    final fontSize = _safeGetDouble(prefs, _fontSizeKey, 16.0);
+    return fontSize.clamp(12.0, 24.0);
   }
 
   // 保存字体大小
   Future<void> saveFontSize(double fontSize) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_fontSizeKey, fontSize);
+    final clampedFontSize = fontSize.clamp(12.0, 24.0);
+    await prefs.setDouble(_fontSizeKey, clampedFontSize);
   }
 }

@@ -32,6 +32,8 @@ dependencies:
   # 与CupertinoIcons类一起使用，用于iOS风格的图标。
   cupertino_icons: ^1.0.8
   get: ^4.6.5
+  # 日志库
+  logger: ^2.0.2
 
   # html解析
   html: ^0.15.4
@@ -77,6 +79,9 @@ dependencies:
   url_launcher: ^6.2.5
   # 自定义窗口标题栏
   window_manager: ^0.5.1
+
+  # M3E 组件库
+  m3e_collection: ^0.3.7
 
 dev_dependencies:
   flutter_test:

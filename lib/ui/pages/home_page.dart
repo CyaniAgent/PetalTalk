@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
@@ -109,7 +110,7 @@ class _DiscussionListState extends State<DiscussionList>
       setState(() {
         _isLoading = false;
       });
-      SnackbarUtils.showMaterialSnackbar(context, '获取主题帖列表失败');
+      // 不再显示错误提示，只在UI上显示错误状态
     }
   }
 
@@ -188,7 +189,7 @@ class _DiscussionListState extends State<DiscussionList>
                     });
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: LoadingIndicatorM3E()),
                     );
                   } else {
                     // 没有更多数据

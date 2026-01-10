@@ -1,5 +1,5 @@
 /// 主题服务，负责管理应用的主题设置和主题创建
-/// 
+///
 /// 该服务提供：
 /// 1. 主题模式管理
 /// 2. 亮色主题创建
@@ -7,6 +7,7 @@
 /// 4. 强调色管理
 library;
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 import './appearance_service.dart';
@@ -17,10 +18,10 @@ class ThemeService {
   final AppearanceService _appearanceService = AppearanceService();
 
   /// 根据颜色名称获取对应的强调色
-  /// 
+  ///
   /// 参数：
   /// - accentColorName: 强调色名称（如'blue'、'red'等）
-  /// 
+  ///
   /// 返回值：
   /// - Color: 对应的颜色值
   Color getAccentColor(String accentColorName) {
@@ -57,10 +58,10 @@ class ThemeService {
   }
 
   /// 创建亮色主题
-  /// 
+  ///
   /// 参数：
   /// - lightDynamic: 系统提供的动态颜色方案（如果支持）
-  /// 
+  ///
   /// 返回值：
   /// - `Future<ThemeData>`: 配置好的亮色主题
   Future<ThemeData> createLightTheme(ColorScheme? lightDynamic) async {
@@ -72,20 +73,22 @@ class ThemeService {
         ? lightDynamic
         : ColorScheme.fromSeed(seedColor: accentColor);
 
+    // 根据平台设置字体，Windows上优先使用Noto Sans SC
+    final fontFamily = Platform.isWindows ? 'Noto Sans SC' : 'system';
+
     return ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
-      // 使用系统字体
-      fontFamily: 'system',
+      fontFamily: fontFamily,
       appBarTheme: const AppBarTheme(elevation: 0),
     );
   }
 
   /// 创建暗色主题
-  /// 
+  ///
   /// 参数：
   /// - darkDynamic: 系统提供的动态颜色方案（如果支持）
-  /// 
+  ///
   /// 返回值：
   /// - `Future<ThemeData>`: 配置好的暗色主题
   Future<ThemeData> createDarkTheme(ColorScheme? darkDynamic) async {
@@ -100,17 +103,19 @@ class ThemeService {
             brightness: Brightness.dark,
           );
 
+    // 根据平台设置字体，Windows上优先使用Noto Sans SC
+    final fontFamily = Platform.isWindows ? 'Noto Sans SC' : 'system';
+
     return ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
-      // 使用系统字体
-      fontFamily: 'system',
+      fontFamily: fontFamily,
       appBarTheme: const AppBarTheme(elevation: 0),
     );
   }
 
   /// 加载主题模式
-  /// 
+  ///
   /// 返回值：
   /// - `Future<ThemeMode>`: 当前保存的主题模式
   Future<ThemeMode> loadThemeMode() async {
@@ -118,7 +123,7 @@ class ThemeService {
   }
 
   /// 保存主题模式
-  /// 
+  ///
   /// 参数：
   /// - themeMode: 要保存的主题模式
   Future<void> saveThemeMode(ThemeMode themeMode) async {

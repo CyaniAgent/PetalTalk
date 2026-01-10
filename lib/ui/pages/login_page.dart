@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:petal_talk/state/main_state.dart';
 
 import '../../api/services/auth_service.dart';
@@ -188,9 +189,7 @@ class LoginPage extends StatelessWidget {
                                   ? const SizedBox(
                                       width: 24,
                                       height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                      ),
+                                      child: LoadingIndicatorM3E(),
                                     )
                                   : const Text('登录'),
                             ),

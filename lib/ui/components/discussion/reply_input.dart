@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 class ReplyInput extends StatefulWidget {
   final VoidCallback onSubmit;
@@ -114,10 +115,7 @@ class _ReplyInputState extends State<ReplyInput> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                        child: LoadingIndicatorM3E(),
                       )
                     : const Icon(Icons.send),
                 label: const Text('发送'),

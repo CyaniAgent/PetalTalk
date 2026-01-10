@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 import '../../api/services/post_service.dart';
 import '../../api/services/discussion_service.dart';
@@ -7,6 +8,7 @@ import '../../api/models/discussion.dart';
 import '../../api/models/post.dart';
 import '../../utils/time_formatter.dart';
 import '../../utils/snackbar_utils.dart';
+import '../../core/cache_service.dart';
 import '../components/discussion/post_content.dart';
 import '../components/discussion/reply_input.dart';
 
@@ -56,23 +58,54 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
 
   // 加载主题帖详情
   Future<void> _loadDiscussionDetail(String id) async {
-    if (mounted) {
+    // 1. 先从缓存获取数据并显示
+    final cacheService = Get.find<CacheService>();
+    final cacheKey = 'cache_discussion_$id';
+    final cachedDiscussion = await cacheService.getCache<Map<String, dynamic>>(cacheKey);
+    
+    if (cachedDiscussion != null && mounted) {
+      // 处理缓存数据，获取用户和标签信息
+      if (cachedDiscussion.containsKey('included')) {
+        final List<dynamic> included = cachedDiscussion['included'];
+        for (final item in included) {
+          if (item['type'] == 'users') {
+            final userId = item['id'];
+            final username = item['attributes']['username'];
+            final avatarUrl = item['attributes']['avatarUrl'];
+            _users[userId] = username;
+            if (avatarUrl != null) {
+              _userAvatars[userId] = avatarUrl;
+            }
+          } else if (item['type'] == 'tags') {
+            final tagId = item['id'];
+            final tagName = item['attributes']['name'];
+            _tags[tagId] = tagName;
+          }
+        }
+      }
       setState(() {
-        _isLoading = true;
+        _discussion = Discussion.fromJson(cachedDiscussion['data']);
+        _isLoading = false;
       });
+      // 加载缓存的帖子
+      _loadPostsFromCache(id);
+    } else {
+      // 如果没有缓存，显示加载状态
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
     }
-
+    
+    // 2. 后台请求最新数据
     final result = await _discussionService.getDiscussion(id);
-
+    
     // 检查组件是否仍然挂载
     if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
+    
     if (result != null && result.containsKey('data')) {
-      // 处理included数据，获取用户和标签信息
+      // 处理最新数据，获取用户和标签信息
       if (result.containsKey('included')) {
         final List<dynamic> included = result['included'];
         for (final item in included) {
@@ -91,13 +124,102 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           }
         }
       }
+      
+      final newDiscussion = Discussion.fromJson(result['data']);
+      bool isNewData = _discussion == null || _discussion!.id != newDiscussion.id;
+      
       setState(() {
-        _discussion = Discussion.fromJson(result['data']);
+        _discussion = newDiscussion;
+        _isLoading = false;
       });
-      _loadPosts();
+      
+      // 如果是新数据或没有缓存，加载帖子；否则只在后台更新
+      if (isNewData) {
+        _loadPosts();
+      } else {
+        _loadPostsInBackground();
+      }
     } else {
-      SnackbarUtils.showMaterialSnackbar(context, '获取主题帖详情失败');
-      Get.back();
+      // 获取主题帖详情失败，如果没有缓存则返回上一页
+      if (_discussion == null) {
+        Get.back();
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  // 从缓存加载帖子
+  Future<void> _loadPostsFromCache(String discussionId) async {
+    final cacheService = Get.find<CacheService>();
+    final cacheKey = 'cache_posts_for_discussion_${discussionId}_0_20';
+    final cachedPosts = await cacheService.getCache<Map<String, dynamic>>(cacheKey);
+    
+    if (cachedPosts != null && mounted) {
+      // 处理缓存的帖子数据
+      if (cachedPosts.containsKey('included')) {
+        final List<dynamic> included = cachedPosts['included'];
+        for (final item in included) {
+          if (item['type'] == 'users') {
+            final userId = item['id'];
+            final username = item['attributes']['username'];
+            final avatarUrl = item['attributes']['avatarUrl'];
+            _users[userId] = username;
+            if (avatarUrl != null) {
+              _userAvatars[userId] = avatarUrl;
+            }
+          }
+        }
+      }
+      
+      final List<Post> posts = (cachedPosts['data'] as List)
+          .map((post) => Post.fromJson(post))
+          .toList();
+      
+      setState(() {
+        _posts.addAll(posts);
+      });
+    }
+  }
+  
+  // 后台加载帖子并更新
+  Future<void> _loadPostsInBackground() async {
+    if (_discussion == null) return;
+    
+    final result = await _postService.getPostsForDiscussion(_discussion!.id);
+    
+    if (result != null && mounted) {
+      // 处理最新帖子数据
+      if (result.containsKey('included')) {
+        final List<dynamic> included = result['included'];
+        for (final item in included) {
+          if (item['type'] == 'users') {
+            final userId = item['id'];
+            final username = item['attributes']['username'];
+            final avatarUrl = item['attributes']['avatarUrl'];
+            _users[userId] = username;
+            if (avatarUrl != null) {
+              _userAvatars[userId] = avatarUrl;
+            }
+          }
+        }
+      }
+      
+      final List<Post> newPosts = (result['data'] as List)
+          .map((post) => Post.fromJson(post))
+          .toList();
+      
+      // 只添加新帖子
+      final existingPostIds = _posts.map((post) => post.id).toSet();
+      final postsToAdd = newPosts.where((post) => !existingPostIds.contains(post.id)).toList();
+      
+      if (postsToAdd.isNotEmpty && mounted) {
+        setState(() {
+          _posts.addAll(postsToAdd);
+        });
+      }
     }
   }
 
@@ -105,6 +227,14 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
   Future<void> _loadPosts() async {
     if (_discussion == null) return;
 
+    // 1. 检查是否已经从缓存加载了帖子
+    if (_posts.isNotEmpty) {
+      // 如果已经有缓存帖子，只在后台更新
+      _loadPostsInBackground();
+      return;
+    }
+    
+    // 2. 如果没有缓存帖子，显示加载状态并获取最新数据
     if (mounted) {
       setState(() {
         _isLoading = true;
@@ -146,7 +276,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
         _posts.addAll(newPosts);
       });
     } else {
-      SnackbarUtils.showMaterialSnackbar(context, '获取帖子列表失败');
+      // 不再显示错误提示，只在UI上显示错误状态
     }
   }
 
@@ -283,6 +413,35 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
               )
             : Text('加载中...', maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          // 关注按钮
+          if (_discussion != null)
+            IconButton(
+              icon: Icon(
+                _discussion!.subscription == 'follow'
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: _discussion!.subscription == 'follow'
+                    ? Theme.of(context).colorScheme.error
+                    : null,
+              ),
+              onPressed: () async {
+                // 切换关注状态
+                final newSubscription = _discussion!.subscription == 'follow'
+                    ? null
+                    : 'follow';
+
+                final result = await _discussionService.followDiscussion(
+                  id: _discussion!.id,
+                  subscription: newSubscription ?? '',
+                );
+
+                if (result != null) {
+                  setState(() {
+                    _discussion = Discussion.fromJson(result['data']);
+                  });
+                }
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
@@ -292,8 +451,8 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           ),
         ],
       ),
-      body: _isLoading && _discussion == null
-          ? const Center(child: CircularProgressIndicator())
+      body: _isLoading
+          ? const Center(child: LoadingIndicatorM3E())
           : Column(
               children: [
                 // 帖子列表
@@ -409,17 +568,6 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                               // 操作按钮
                               Row(
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.thumb_up),
-                                    iconSize: isFirstPost ? 20 : 18,
-                                    onPressed: () {
-                                      // 点赞
-                                      SnackbarUtils.showDevelopmentInProgress(
-                                        context,
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(width: 16),
                                   IconButton(
                                     icon: const Icon(Icons.reply),
                                     iconSize: isFirstPost ? 20 : 18,

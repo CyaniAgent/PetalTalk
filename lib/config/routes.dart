@@ -11,6 +11,7 @@ import '../ui/pages/setting_page.dart';
 import '../ui/pages/endpoint_selection_page.dart';
 import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
+
 class AppRoutes {
   /// 初始路由
   static const String initialRoute = '/home';
@@ -48,7 +49,9 @@ final List<GetPage> appRoutes = [
   GetPage(
     name: AppRoutes.login,
     page: () => const LoginPage(),
-    binding: BindingsBuilder(() { Get.put(LoginController()); }),
+    binding: BindingsBuilder(() {
+      Get.put(LoginController());
+    }),
   ),
   GetPage(name: AppRoutes.home, page: () => const HomePage()),
   GetPage(

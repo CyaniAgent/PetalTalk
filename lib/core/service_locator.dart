@@ -12,6 +12,7 @@ import '../api/services/post_service.dart';
 import '../global_services/window_service.dart';
 import '../global_services/theme_service.dart';
 import '../state/main_state.dart';
+import './cache_service.dart';
 
 /// 服务定位器类，提供统一的服务注册和管理
 class ServiceLocator {
@@ -24,16 +25,19 @@ class ServiceLocator {
   ///
   /// 所有服务都注册为永久单例，确保在应用生命周期内只创建一次
   static void init() {
-    // 注册API服务
+    // 先注册基础服务和全局服务，确保它们在依赖它们的服务之前被注册
+    
+    // 注册全局服务
+    Get.put(WindowService(), permanent: true);
+    Get.put(ThemeService(), permanent: true);
+    Get.put(CacheService(), permanent: true);
+    
+    // 注册API服务（依赖CacheService）
     Get.put(FlarumApi(), permanent: true);
     Get.put(AuthService(), permanent: true);
     Get.put(DiscussionService(), permanent: true);
     Get.put(NotificationService(), permanent: true);
     Get.put(PostService(), permanent: true);
-
-    // 注册全局服务
-    Get.put(WindowService(), permanent: true);
-    Get.put(ThemeService(), permanent: true);
 
     // 注册状态管理服务
     Get.put(UiMainController(), permanent: true);

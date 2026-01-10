@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m3e_collection/m3e_collection.dart';
+import 'package:dio/dio.dart';
+import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import '/api/flarum_api.dart';
 import '/utils/snackbar_utils.dart';
 
@@ -48,21 +51,78 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
       _isLoading = true;
     });
 
-    // 保存端点到本地存储
-    await _api.saveEndpoint(cleanedUrl);
+    try {
+      // 检查端点是否能正常响应
+      final tempDio = Dio();
+      // 使用HTTP2适配器提高兼容性
+      tempDio.httpClientAdapter = Http2Adapter(
+        ConnectionManager(
+          idleTimeout: const Duration(seconds: 10),
+        ),
+      );
+      
+      // 发送GET请求检查端点状态
+      final response = await tempDio.get(
+        '$cleanedUrl/api',
+        options: Options(
+          followRedirects: false,
+          validateStatus: (status) => status != null,
+          headers: {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+      
+      // 检查状态码是否为200
+      if (response.statusCode != 200) {
+        if (mounted) {
+          SnackbarUtils.showMaterialSnackbar(
+            context, 
+            '端点响应异常，状态码：${response.statusCode}',
+          );
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+      
+      // 保存端点到本地存储
+      await _api.saveEndpoint(cleanedUrl);
 
-    setState(() {
-      _isLoading = false;
-    });
-
-    // 保存成功，跳转到首页
-    Get.offAllNamed('/home');
+      // 保存成功，跳转到首页
+      Get.offAllNamed('/home');
+    } catch (e) {
+      if (mounted) {
+        SnackbarUtils.showMaterialSnackbar(
+          context, 
+          '无法连接到端点，请检查URL是否正确',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 返回上一页
+            Get.back();
+          },
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -125,7 +185,7 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator()
+                        ? const LoadingIndicatorM3E()
                         : const Text('连接'),
                   ),
                   const SizedBox(height: 16),

@@ -11,11 +11,15 @@ library;
 import '../flarum_api.dart';
 import 'package:get/get.dart';
 import '../../utils/error_handler.dart';
+import '../../core/cache_service.dart';
 
 /// 帖子服务类，处理帖子相关的所有API操作
 class PostService {
   /// Flarum API客户端实例
   final FlarumApi _api = Get.find<FlarumApi>();
+  
+  /// 缓存服务实例
+  final CacheService _cacheService = Get.find<CacheService>();
 
   /// 获取帖子列表
   /// 
@@ -29,6 +33,9 @@ class PostService {
     int offset = 0,
     int limit = 20,
   }) async {
+    // 生成缓存键
+    final cacheKey = 'cache_posts_${offset}_$limit';
+    
     try {
       final response = await _api.get(
         '/api/posts',
@@ -36,13 +43,69 @@ class PostService {
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        final newData = response.data;
+        
+        // 获取当前缓存数据
+        final cachedData = await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
+        
+        // 比较数据是否一致，不一致则更新缓存
+        if (cachedData == null || _arePostsDifferent(cachedData, newData)) {
+          await _cacheService.setCache(
+            key: cacheKey,
+            data: newData,
+          );
+        }
+        
+        return newData;
       }
       return null;
     } catch (e) {
       ErrorHandler.handleError(e, 'Get posts');
-      return null;
+      // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      return await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
     }
+  }
+  
+  /// 比较两个帖子列表数据是否不同
+  /// 
+  /// 参数：
+  /// - oldData: 旧数据
+  /// - newData: 新数据
+  /// 
+  /// 返回值：
+  /// - bool: 如果数据不同返回true，否则返回false
+  bool _arePostsDifferent(Map<String, dynamic> oldData, Map<String, dynamic> newData) {
+    final oldPosts = oldData['data'] as List;
+    final newPosts = newData['data'] as List;
+    
+    // 比较数据列表长度
+    if (oldPosts.length != newPosts.length) {
+      return true;
+    }
+    
+    // 比较每条数据的id和attributes
+    for (int i = 0; i < oldPosts.length; i++) {
+      final oldItem = oldPosts[i] as Map<String, dynamic>;
+      final newItem = newPosts[i] as Map<String, dynamic>;
+      
+      // 比较id
+      if (oldItem['id'] != newItem['id']) {
+        return true;
+      }
+      
+      // 比较attributes
+      final oldAttrs = oldItem['attributes'] as Map<String, dynamic>;
+      final newAttrs = newItem['attributes'] as Map<String, dynamic>;
+      
+      // 比较关键属性
+      if (oldAttrs['content'] != newAttrs['content'] ||
+          oldAttrs['createdAt'] != newAttrs['createdAt'] ||
+          oldAttrs['updatedAt'] != newAttrs['updatedAt']) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /// 获取单个帖子详情
@@ -53,17 +116,66 @@ class PostService {
   /// 返回值：
   /// - `Future<Map<String, dynamic>?>`: 包含帖子详情的响应数据，失败返回null
   Future<Map<String, dynamic>?> getPost(String id) async {
+    // 生成缓存键
+    final cacheKey = 'cache_post_$id';
+    
     try {
       final response = await _api.get('/api/posts/$id');
 
       if (response.statusCode == 200) {
-        return response.data;
+        final newData = response.data;
+        
+        // 获取当前缓存数据
+        final cachedData = await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
+        
+        // 比较数据是否一致，不一致则更新缓存
+        if (cachedData == null || _arePostDetailsDifferent(cachedData, newData)) {
+          await _cacheService.setCache(
+            key: cacheKey,
+            data: newData,
+          );
+        }
+        
+        return newData;
       }
       return null;
     } catch (e) {
       ErrorHandler.handleError(e, 'Get post');
-      return null;
+      // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      return await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
     }
+  }
+  
+  /// 比较两个帖子详情数据是否不同
+  /// 
+  /// 参数：
+  /// - oldData: 旧数据
+  /// - newData: 新数据
+  /// 
+  /// 返回值：
+  /// - bool: 如果数据不同返回true，否则返回false
+  bool _arePostDetailsDifferent(Map<String, dynamic> oldData, Map<String, dynamic> newData) {
+    final oldPost = oldData['data'] as Map<String, dynamic>;
+    final newPost = newData['data'] as Map<String, dynamic>;
+    
+    // 比较id
+    if (oldPost['id'] != newPost['id']) {
+      return true;
+    }
+    
+    // 比较attributes
+    final oldAttrs = oldPost['attributes'] as Map<String, dynamic>;
+    final newAttrs = newPost['attributes'] as Map<String, dynamic>;
+    
+    // 比较关键属性
+    if (oldAttrs['content'] != newAttrs['content'] ||
+        oldAttrs['createdAt'] != newAttrs['createdAt'] ||
+        oldAttrs['updatedAt'] != newAttrs['updatedAt'] ||
+        oldAttrs['number'] != newAttrs['number']) {
+      return true;
+    }
+    
+    return false;
   }
 
   /// 获取主题帖的所有帖子
@@ -80,6 +192,9 @@ class PostService {
     int offset = 0,
     int limit = 20,
   }) async {
+    // 生成缓存键
+    final cacheKey = 'cache_posts_for_discussion_${discussionId}_${offset}_$limit';
+    
     try {
       final response = await _api.get(
         '/api/posts',
@@ -91,12 +206,26 @@ class PostService {
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        final newData = response.data;
+        
+        // 获取当前缓存数据
+        final cachedData = await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
+        
+        // 比较数据是否一致，不一致则更新缓存
+        if (cachedData == null || _arePostsDifferent(cachedData, newData)) {
+          await _cacheService.setCache(
+            key: cacheKey,
+            data: newData,
+          );
+        }
+        
+        return newData;
       }
       return null;
     } catch (e) {
       ErrorHandler.handleError(e, 'Get posts for discussion');
-      return null;
+      // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      return await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
     }
   }
 

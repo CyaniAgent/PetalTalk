@@ -1,5 +1,5 @@
 /// 应用初始化器，负责处理应用启动前的所有初始化工作
-/// 
+///
 /// 该类在应用启动时被调用，执行以下初始化步骤：
 /// 1. 确保Flutter绑定已初始化
 /// 2. 初始化服务定位器，注册所有必要服务
@@ -17,6 +17,7 @@ import '../api/services/auth_service.dart';
 import '../config/constants.dart';
 import '../core/service_locator.dart';
 import '../global_services/window_service.dart';
+import './cache_service.dart';
 
 /// 应用初始化器类，提供统一的应用初始化入口
 class AppInitializer {
@@ -39,6 +40,10 @@ class AppInitializer {
     // 初始化并设置应用窗口
     await WindowService.initialize();
     await WindowService.setupWindow();
+
+    // 初始化缓存服务
+    final cacheService = Get.find<CacheService>();
+    await cacheService.initialize();
 
     // 加载端点配置，确定应用要连接的后端服务器
     await api.loadEndpoint();

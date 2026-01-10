@@ -7,11 +7,16 @@ import '../flarum_api.dart';
 import '../models/notification.dart' as notification_model;
 import 'package:get/get.dart';
 import '../../utils/error_handler.dart';
+import '../../core/logger.dart';
+import '../../core/cache_service.dart';
 
 /// 通知服务类，处理通知相关的所有API操作
 class NotificationService {
   /// Flarum API客户端实例
   final FlarumApi _api = Get.find<FlarumApi>();
+  
+  /// 缓存服务实例
+  final CacheService _cacheService = Get.find<CacheService>();
 
   /// 获取通知列表
   /// 
@@ -23,14 +28,66 @@ class NotificationService {
   Future<List<notification_model.Notification>?> getNotifications({
     int offset = 0,
   }) async {
+    // 生成缓存键
+    final cacheKey = 'cache_notifications_$offset';
+    
     try {
+      logger.info('开始获取通知列表，偏移量: $offset');
       final response = await _api.get(
         '/api/notifications',
         queryParameters: {'page[offset]': offset, 'include': ''},
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final newData = response.data;
+        final List<dynamic> notificationsJson = newData['data'];
+        final List<dynamic> includedJson = newData['included'] ?? [];
+
+        logger.debug('通知列表API响应成功，数据数量: ${notificationsJson.length}');
+        
+        // 获取当前缓存数据
+        final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
+        
+        // 比较数据是否一致，不一致则更新缓存
+        if (cachedResponse == null || _areNotificationsDifferent(cachedResponse, newData)) {
+          // 将完整的响应数据存入缓存，有效期30分钟
+          await _cacheService.setCache(
+            key: cacheKey,
+            data: newData,
+          );
+        }
+
+        // 构建included数据的索引映射，便于快速查找
+        final Map<String, Map<String, dynamic>> includedData = {};
+        for (final item in includedJson) {
+          final key = '${item['type']}_${item['id']}';
+          includedData[key] = item;
+        }
+
+        // 解析通知数据
+        final notifications = notificationsJson
+            .map(
+              (json) =>
+                  notification_model.Notification.fromJson(json, includedData),
+            )
+            .toList();
+
+        logger.info('成功解析通知列表，共 ${notifications.length} 条通知');
+        return notifications;
+      } else {
+        logger.warning('通知列表API响应失败，状态码: ${response.statusCode}');
+      }
+      return null;
+    } catch (e, stackTrace) {
+      logger.error('获取通知列表发生异常', e, stackTrace);
+      ErrorHandler.handleError(e, 'Get notifications');
+      
+      // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
+      if (cachedResponse != null) {
+        logger.info('网络请求失败，使用过期缓存获取通知列表');
+        
+        final data = cachedResponse;
         final List<dynamic> notificationsJson = data['data'];
         final List<dynamic> includedJson = data['included'] ?? [];
 
@@ -51,10 +108,50 @@ class NotificationService {
 
         return notifications;
       }
-      return null;
-    } catch (e) {
-      ErrorHandler.handleError(e, 'Get notifications');
+      
       return null;
     }
+  }
+  
+  /// 比较两个通知列表数据是否不同
+  /// 
+  /// 参数：
+  /// - oldData: 旧数据
+  /// - newData: 新数据
+  /// 
+  /// 返回值：
+  /// - bool: 如果数据不同返回true，否则返回false
+  bool _areNotificationsDifferent(Map<String, dynamic> oldData, Map<String, dynamic> newData) {
+    final oldNotifications = oldData['data'] as List;
+    final newNotifications = newData['data'] as List;
+    
+    // 比较数据列表长度
+    if (oldNotifications.length != newNotifications.length) {
+      return true;
+    }
+    
+    // 比较每条数据的id和attributes
+    for (int i = 0; i < oldNotifications.length; i++) {
+      final oldItem = oldNotifications[i] as Map<String, dynamic>;
+      final newItem = newNotifications[i] as Map<String, dynamic>;
+      
+      // 比较id
+      if (oldItem['id'] != newItem['id']) {
+        return true;
+      }
+      
+      // 比较attributes
+      final oldAttrs = oldItem['attributes'] as Map<String, dynamic>;
+      final newAttrs = newItem['attributes'] as Map<String, dynamic>;
+      
+      // 比较关键属性
+      if (oldAttrs['type'] != newAttrs['type'] ||
+          oldAttrs['readAt'] != newAttrs['readAt'] ||
+          oldAttrs['createdAt'] != newAttrs['createdAt']) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 }

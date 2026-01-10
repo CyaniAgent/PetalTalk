@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 import '../../api/services/notification_service.dart';
+import '../../api/services/auth_service.dart';
 import '../../api/models/notification.dart' as notification_model;
-import '../../utils/snackbar_utils.dart';
 import '../../utils/time_formatter.dart';
+import '../../core/logger.dart';
 
 // 通知列表组件
 class NotificationList extends StatefulWidget {
@@ -16,11 +18,15 @@ class NotificationList extends StatefulWidget {
 
 class _NotificationListState extends State<NotificationList>
     with AutomaticKeepAliveClientMixin<NotificationList> {
-  final NotificationService _notificationService = Get.find<NotificationService>();
+  final NotificationService _notificationService =
+      Get.find<NotificationService>();
+  final AuthService _authService = Get.find<AuthService>();
   final List<notification_model.Notification> _notifications = [];
   bool _isLoading = false;
   bool _hasMore = true;
   int _offset = 0;
+  int _retryCount = 0;
+  static const int _maxRetryCount = 3;
 
   @override
   void initState() {
@@ -30,37 +36,79 @@ class _NotificationListState extends State<NotificationList>
 
   // 加载通知列表
   Future<void> _loadNotifications({bool isRefresh = false}) async {
+    // 如果用户未登录，不加载通知
+    if (!_authService.isLoggedIn()) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasMore = false;
+        });
+      }
+      logger.info('用户未登录，跳过通知列表加载');
+      return;
+    }
+
+    // 如果已达到最大重试次数，停止加载
+    if (_retryCount >= _maxRetryCount && !isRefresh) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasMore = false;
+        });
+      }
+      logger.warning('已达到最大重试次数，停止加载通知列表');
+      return;
+    }
+
     if (_isLoading || (!_hasMore && !isRefresh)) return;
 
     setState(() {
       _isLoading = true;
     });
 
-    final notifications = await _notificationService.getNotifications(
-      offset: isRefresh ? 0 : _offset,
-    );
+    try {
+      logger.info('开始加载通知列表，偏移量: ${isRefresh ? 0 : _offset}');
+      final notifications = await _notificationService.getNotifications(
+        offset: isRefresh ? 0 : _offset,
+      );
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        if (notifications != null) {
-          if (isRefresh) {
-            _notifications.clear();
-            _notifications.addAll(notifications);
-            _offset = notifications.length;
-            _hasMore = notifications.isNotEmpty;
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (notifications != null) {
+            logger.info('成功加载通知列表，数量: ${notifications.length}');
+            // 重置重试计数
+            _retryCount = 0;
+            if (isRefresh) {
+              _notifications.clear();
+              _notifications.addAll(notifications);
+              _offset = notifications.length;
+              _hasMore = notifications.isNotEmpty;
+            } else {
+              _notifications.addAll(notifications);
+              _offset += notifications.length;
+              _hasMore = notifications.isNotEmpty;
+            }
           } else {
-            _notifications.addAll(notifications);
-            _offset += notifications.length;
-            _hasMore = notifications.isNotEmpty;
+            logger.warning('获取通知列表失败，重试次数: ${_retryCount + 1}');
+            // 增加重试计数
+            _retryCount++;
+            if (isRefresh) {
+              _hasMore = false;
+            }
+            // 不再显示重试提示，只在UI上显示错误状态
           }
-        } else {
-          if (isRefresh) {
-            _hasMore = false;
-          }
-          SnackbarUtils.showMaterialSnackbar(context, '获取通知列表失败');
-        }
-      });
+        });
+      }
+    } catch (e, stackTrace) {
+      logger.error('加载通知列表发生异常', e, stackTrace);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _retryCount++;
+        });
+      }
+      // 不再显示重试提示，只在UI上显示错误状态
     }
   }
 
@@ -103,82 +151,132 @@ class _NotificationListState extends State<NotificationList>
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
-          slivers: [
-            SliverSafeArea(
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index < _notifications.length) {
-                    final notification = _notifications[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            notification
-                                    .fromUser?['attributes']?['avatarUrl'] !=
-                                null
-                            ? NetworkImage(
-                                notification
-                                    .fromUser!['attributes']!['avatarUrl'],
-                              )
-                            : null,
-                        child:
-                            notification
-                                    .fromUser?['attributes']?['avatarUrl'] ==
-                                null
-                            ? Text(
-                                notification
-                                        .fromUser?['attributes']?['username']?[0] ??
-                                    '?',
-                              )
-                            : null,
-                      ),
-                      title: Text(_formatNotificationContent(notification)),
-                      subtitle: Text(
-                        TimeFormatter.formatLocalTime(notification.createdAt),
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                        ),
-                      ),
-                      trailing: notification.isRead
-                          ? null
-                          : Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.red,
-                              ),
-                            ),
-                      onTap: () {
-                        // 跳转到相关主题帖
-                        if (notification.subjectType == 'discussions') {
-                          Get.toNamed('/discussion/${notification.subjectId}');
-                        }
-                      },
-                    );
-                  } else if (_hasMore) {
-                    // 异步加载更多
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _handleLoadMore();
-                      }
-                    });
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  } else {
-                    // 没有更多数据
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: Text('没有更多通知了')),
-                    );
-                  }
-                }, childCount: _notifications.length + (_hasMore ? 1 : 0)),
-              ),
-            ),
-          ],
+          slivers: [SliverSafeArea(sliver: _buildContent())],
         ),
       ),
+    );
+  }
+
+  // 构建内容区域
+  Widget _buildContent() {
+    // 未登录状态
+    if (!_authService.isLoggedIn()) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.login, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('您尚未登录', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 8),
+              const Text('请登录后查看通知', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Get.toNamed('/login');
+                },
+                child: const Text('去登录'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 达到最大重试次数，显示错误页面
+    if (_retryCount >= _maxRetryCount && _notifications.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text('获取通知失败', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 8),
+              const Text('请检查网络连接后重试', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  // 重置重试计数并刷新
+                  setState(() {
+                    _retryCount = 0;
+                    _hasMore = true;
+                  });
+                  _handleRefresh();
+                },
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 正常显示通知列表
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index < _notifications.length) {
+          final notification = _notifications[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage:
+                  notification.fromUser?['attributes']?['avatarUrl'] != null
+                  ? NetworkImage(
+                      notification.fromUser!['attributes']!['avatarUrl'],
+                    )
+                  : null,
+              child: notification.fromUser?['attributes']?['avatarUrl'] == null
+                  ? Text(
+                      notification.fromUser?['attributes']?['username']?[0] ??
+                          '?',
+                    )
+                  : null,
+            ),
+            title: Text(_formatNotificationContent(notification)),
+            subtitle: Text(
+              TimeFormatter.formatLocalTime(notification.createdAt),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
+            trailing: notification.isRead
+                ? null
+                : Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red,
+                    ),
+                  ),
+            onTap: () {
+              // 跳转到相关主题帖
+              if (notification.subjectType == 'discussions') {
+                Get.toNamed('/discussion/${notification.subjectId}');
+              }
+            },
+          );
+        } else if (_hasMore) {
+          // 异步加载更多
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _handleLoadMore();
+            }
+          });
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: LoadingIndicatorM3E()),
+          );
+        } else {
+          // 没有更多数据
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: Text('没有更多通知了')),
+          );
+        }
+      }, childCount: _notifications.length + (_hasMore ? 1 : 0)),
     );
   }
 }

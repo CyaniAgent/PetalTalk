@@ -7,8 +7,6 @@
 library;
 
 import 'package:dio/dio.dart';
-import '/utils/snackbar_utils.dart';
-import 'package:get/get.dart';
 
 /// 错误类型枚举，定义了应用中可能遇到的各种错误类型
 enum ErrorType {
@@ -116,7 +114,8 @@ class ErrorHandler {
   /// - errorMessage: 可选的自定义错误消息
   ///
   /// 返回值：
-  /// - `Future<T?>`: 成功时返回API调用的结果，失败时返回null并显示错误提示
+  /// - `Future<T?>`: 成功时返回API调用的结果，失败时返回null
+  /// 注意：不再自动显示错误提示，由调用方决定如何处理错误
   Future<T?> handleApiCall<T>(
     Future<T> Function() apiCall, {
     String? errorMessage,
@@ -124,8 +123,7 @@ class ErrorHandler {
     try {
       return await apiCall();
     } catch (error) {
-      final message = errorMessage ?? handleError(error);
-      SnackbarUtils.showMaterialSnackbar(Get.context!, message);
+      // 仅记录错误，不显示提示
       return null;
     }
   }
