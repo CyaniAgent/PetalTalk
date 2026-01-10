@@ -73,8 +73,6 @@ dependencies:
   dio_http2_adapter: ^2.3.1+1
   # 本地存储
   shared_preferences: ^2.2.3
-  # 中文字体渲染
-  chinese_font_library: ^1.0.4
   # 链接打开
   url_launcher: ^6.2.5
   # 自定义窗口标题栏
