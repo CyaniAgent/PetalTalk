@@ -6,7 +6,9 @@ import '../../api/services/notification_service.dart';
 import '../../api/services/auth_service.dart';
 import '../../api/models/notification.dart' as notification_model;
 import '../../utils/time_formatter.dart';
+import '../../utils/snackbar_utils.dart';
 import '../../core/logger.dart';
+import '../../utils/error_handler.dart';
 
 // 通知列表组件
 class NotificationList extends StatefulWidget {
@@ -89,6 +91,15 @@ class _NotificationListState extends State<NotificationList>
               _offset += notifications.length;
               _hasMore = notifications.isNotEmpty;
             }
+
+            // 如果是刷新操作且没有通知，显示空状态提示
+            if (isRefresh && notifications.isEmpty) {
+              SnackbarUtils.showMaterialSnackbar(
+                context,
+                '暂无新通知',
+                duration: const Duration(seconds: 1),
+              );
+            }
           } else {
             logger.warning('获取通知列表失败，重试次数: ${_retryCount + 1}');
             // 增加重试计数
@@ -96,19 +107,47 @@ class _NotificationListState extends State<NotificationList>
             if (isRefresh) {
               _hasMore = false;
             }
-            // 不再显示重试提示，只在UI上显示错误状态
+
+            // 显示错误提示
+            if (mounted && _retryCount <= _maxRetryCount) {
+              final errorMessage = _retryCount == 1
+                  ? '加载通知失败，正在重试...'
+                  : '加载通知失败，${_maxRetryCount - _retryCount}次重试机会';
+
+              SnackbarUtils.showMaterialSnackbar(
+                context,
+                errorMessage,
+                duration: const Duration(seconds: 2),
+              );
+            }
           }
         });
       }
     } catch (e, stackTrace) {
       logger.error('加载通知列表发生异常', e, stackTrace);
+
+      // 创建详细错误信息
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '加载通知列表发生异常',
+        context: {'isRefresh': isRefresh, 'offset': _offset},
+      );
+
       if (mounted) {
         setState(() {
           _isLoading = false;
           _retryCount++;
         });
+
+        // 显示错误提示
+        if (_retryCount <= _maxRetryCount) {
+          SnackbarUtils.showMaterialSnackbar(
+            context,
+            detailedError.message,
+            duration: const Duration(seconds: 2),
+          );
+        }
       }
-      // 不再显示重试提示，只在UI上显示错误状态
     }
   }
 
@@ -136,7 +175,7 @@ class _NotificationListState extends State<NotificationList>
         final postNumber = notification.content['postNumber'];
         return '$fromUsername 在 "$subjectTitle" 中发布了第 $postNumber 楼';
       default:
-        return '$fromUsername 对您进行了 $notification.contentType 操作';
+        return '$fromUsername 对您（的帖子）进行了 ${notification.contentType} 操作';
     }
   }
 
@@ -207,6 +246,35 @@ class _NotificationListState extends State<NotificationList>
                   _handleRefresh();
                 },
                 child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 空状态：已登录、无错误、但没有通知
+    if (_notifications.isEmpty && !_isLoading) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.notifications_none,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              const Text('暂无通知', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 8),
+              const Text('当有新通知时，会在这里显示', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  _handleRefresh();
+                },
+                child: const Text('刷新'),
               ),
             ],
           ),

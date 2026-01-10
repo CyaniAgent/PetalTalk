@@ -13,6 +13,7 @@ import '../flarum_api.dart';
 import '../../config/constants.dart';
 import 'package:get/get.dart';
 import '../../utils/error_handler.dart';
+import '../../core/logger.dart';
 
 /// 认证服务类，处理用户认证相关的所有功能
 class AuthService {
@@ -54,15 +55,33 @@ class AuthService {
 
         // 如果需要记住登录状态，保存到本地存储
         if (remember && _api.baseUrl != null) {
-          await _api.saveToken(_api.baseUrl!, token);
-          // 保存用户ID，使用端点特定的键
-          await _saveUserId(_api.baseUrl!, userId);
+          try {
+            await _api.saveToken(_api.baseUrl!, token);
+            // 保存用户ID，使用端点特定的键
+            await _saveUserId(_api.baseUrl!, userId);
+          } catch (storageError) {
+            // 本地存储失败，记录错误但不影响登录流程
+            final storageDetailedError = ErrorHandler.createDetailedError(
+              storageError,
+              errorMessage: '保存登录信息失败',
+              context: {'operation': 'login', 'remember': remember, 'userId': userId},
+            );
+            logger.error('保存登录信息失败: $storageDetailedError', storageError);
+          }
         }
 
         return {'token': token, 'userId': userId};
       }
       return null;
     } on DioException catch (e) {
+      // 创建详细错误信息
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '登录失败',
+        context: {'operation': 'login', 'identification': identification},
+      );
+      
+      logger.error('登录失败: $detailedError', e);
       ErrorHandler.handleError(e, 'Login');
 
       // 即使发生异常，也要检查响应数据中是否包含token
@@ -76,8 +95,18 @@ class AuthService {
 
           // 如果需要记住登录状态，保存到本地存储
           if (remember && _api.baseUrl != null && userId != null) {
-            await _api.saveToken(_api.baseUrl!, token);
-            await _saveUserId(_api.baseUrl!, userId);
+            try {
+              await _api.saveToken(_api.baseUrl!, token);
+              await _saveUserId(_api.baseUrl!, userId);
+            } catch (storageError) {
+              // 本地存储失败，记录错误但不影响登录流程
+              final storageDetailedError = ErrorHandler.createDetailedError(
+                storageError,
+                errorMessage: '保存登录信息失败',
+                context: {'operation': 'login', 'remember': remember, 'userId': userId},
+              );
+              logger.error('保存登录信息失败: $storageDetailedError', storageError);
+            }
           }
         }
 
@@ -86,18 +115,17 @@ class AuthService {
 
       return null;
     } catch (e) {
+      // 创建详细错误信息
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '登录发生未知错误',
+        context: {'operation': 'login', 'identification': identification},
+      );
+      
+      logger.error('登录发生未知错误: $detailedError', e);
       ErrorHandler.handleError(e, 'Login');
       return null;
     }
-  }
-
-  /// 从本地存储加载登录信息
-  ///
-  /// 注意：该方法目前为空实现，因为登录信息的加载现在由FlarumApi.loadEndpoint()负责
-  /// FlarumApi会在加载端点时自动加载对应端点的令牌
-  Future<void> loadLoginInfo() async {
-    // 登录信息的加载现在由FlarumApi.loadEndpoint()负责
-    // 这里不需要做任何事情，因为FlarumApi会在加载端点时自动加载对应端点的令牌
   }
 
   /// 保存用户ID到本地存储，使用端点特定的键

@@ -37,7 +37,7 @@ class Notification {
     return Notification(
       id: json['id'],
       contentType: json['attributes']['contentType'],
-      content: json['attributes']['content'],
+      content: json['attributes']['content'] ?? {},
       createdAt: json['attributes']['createdAt'],
       isRead: json['attributes']['isRead'],
       fromUserId: fromUserId ?? 'unknown',

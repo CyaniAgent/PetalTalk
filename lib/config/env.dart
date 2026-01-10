@@ -22,7 +22,7 @@ class EnvironmentConfig {
       case Environment.development:
         return 'https://flarum.imikufans.cn';
       case Environment.staging:
-        return 'https://staging.flarum.imikufans.cn';
+        return 'https://flarum.imikufans.cn';
       case Environment.production:
         return 'https://flarum.imikufans.cn';
     }

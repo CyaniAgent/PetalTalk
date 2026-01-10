@@ -13,7 +13,6 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/flarum_api.dart';
-import '../api/services/auth_service.dart';
 import '../config/constants.dart';
 import '../core/service_locator.dart';
 import '../global_services/window_service.dart';
@@ -35,7 +34,6 @@ class AppInitializer {
 
     // 获取已注册的服务实例
     final api = Get.find<FlarumApi>();
-    final authService = Get.find<AuthService>();
 
     // 初始化并设置应用窗口
     await WindowService.initialize();
@@ -47,9 +45,6 @@ class AppInitializer {
 
     // 加载端点配置，确定应用要连接的后端服务器
     await api.loadEndpoint();
-
-    // 加载用户登录信息，恢复之前的登录状态
-    await authService.loadLoginInfo();
 
     // 检查是否有保存的端点配置
     final prefs = await SharedPreferences.getInstance();
