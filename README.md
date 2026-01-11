@@ -46,7 +46,7 @@
 
 如有问题或建议，欢迎通过以下方式联系：
 
-- GitHub Issues: [https://github.com/SakuraCake/PetalTalk/issues](https://github.com/SakuraCake/PetalTalk/issues)
+- GitHub Issues: [https://github.com/CyaniAgent/PetalTalk/issues](https://github.com/CyaniAgent/PetalTalk/issues)
 - Email: SakuraCake@sorange.top
 
 ---
