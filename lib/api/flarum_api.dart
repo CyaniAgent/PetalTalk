@@ -69,6 +69,11 @@ class FlarumApi {
         headers: {
           'Accept': 'application/vnd.api+json',
           'Content-Type': 'application/vnd.api+json',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Referer': _baseUrl,
+          'Origin': _baseUrl,
         },
       ),
     );
@@ -107,6 +112,8 @@ class FlarumApi {
   void setBaseUrl(String url) {
     _baseUrl = url;
     _dio.options.baseUrl = url;
+    _dio.options.headers['Referer'] = url;
+    _dio.options.headers['Origin'] = url;
   }
 
   /// 设置认证令牌
