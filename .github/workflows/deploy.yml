@@ -105,14 +105,14 @@ jobs:
             os: ubuntu-latest
           - name: android-aab
             os: ubuntu-latest
-        #   - name: web
-        #     os: ubuntu-latest
+          # - name: web
+          #   os: ubuntu-latest
           - name: linux
             os: ubuntu-latest
           - name: windows
             os: windows-latest
-          - name: ios
-            os: macos-latest
+          # - name: ios
+          #   os: macos-latest
           - name: macos
             os: macos-latest
 
