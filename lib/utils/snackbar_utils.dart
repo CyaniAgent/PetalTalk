@@ -8,6 +8,7 @@ class SnackbarUtils {
     String actionLabel = '',
     VoidCallback? onAction,
     Duration duration = const Duration(seconds: 2),
+    bool isError = false,
   }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -16,6 +17,8 @@ class SnackbarUtils {
             ? SnackBarAction(label: actionLabel, onPressed: onAction)
             : null,
         duration: duration,
+        // 根据是否为错误显示不同的背景色
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
         // MD3风格配置
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

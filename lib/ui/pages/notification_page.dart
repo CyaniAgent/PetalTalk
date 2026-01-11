@@ -8,7 +8,6 @@ import '../../api/models/notification.dart' as notification_model;
 import '../../utils/time_formatter.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../core/logger.dart';
-import '../../utils/error_handler.dart';
 
 // 通知列表组件
 class NotificationList extends StatefulWidget {
@@ -68,86 +67,68 @@ class _NotificationListState extends State<NotificationList>
       _isLoading = true;
     });
 
-    try {
-      logger.info('开始加载通知列表，偏移量: ${isRefresh ? 0 : _offset}');
-      final notifications = await _notificationService.getNotifications(
-        offset: isRefresh ? 0 : _offset,
-      );
+    logger.info('开始加载通知列表，偏移量: ${isRefresh ? 0 : _offset}');
+    final notifications = await _notificationService.getNotifications(
+      offset: isRefresh ? 0 : _offset,
+    );
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          if (notifications != null) {
-            logger.info('成功加载通知列表，数量: ${notifications.length}');
-            // 重置重试计数
-            _retryCount = 0;
-            if (isRefresh) {
-              _notifications.clear();
-              _notifications.addAll(notifications);
-              _offset = notifications.length;
-              _hasMore = notifications.isNotEmpty;
-            } else {
-              _notifications.addAll(notifications);
-              _offset += notifications.length;
-              _hasMore = notifications.isNotEmpty;
-            }
-
-            // 如果是刷新操作且没有通知，显示空状态提示
-            if (isRefresh && notifications.isEmpty) {
-              SnackbarUtils.showMaterialSnackbar(
-                context,
-                '暂无新通知',
-                duration: const Duration(seconds: 1),
-              );
-            }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (notifications != null) {
+          logger.info('成功加载通知列表，数量: ${notifications.length}');
+          // 重置重试计数
+          _retryCount = 0;
+          if (isRefresh) {
+            _notifications.clear();
+            _notifications.addAll(notifications);
+            _offset = notifications.length;
+            _hasMore = notifications.isNotEmpty;
           } else {
-            logger.warning('获取通知列表失败，重试次数: ${_retryCount + 1}');
-            // 增加重试计数
-            _retryCount++;
-            if (isRefresh) {
-              _hasMore = false;
-            }
-
-            // 显示错误提示
-            if (mounted && _retryCount <= _maxRetryCount) {
-              final errorMessage = _retryCount == 1
-                  ? '加载通知失败，正在重试...'
-                  : '加载通知失败，${_maxRetryCount - _retryCount}次重试机会';
-
-              SnackbarUtils.showMaterialSnackbar(
-                context,
-                errorMessage,
-                duration: const Duration(seconds: 2),
-              );
-            }
+            _notifications.addAll(notifications);
+            _offset += notifications.length;
+            _hasMore = notifications.isNotEmpty;
           }
-        });
-      }
-    } catch (e, stackTrace) {
-      logger.error('加载通知列表发生异常', e, stackTrace);
 
-      // 创建详细错误信息
-      final detailedError = ErrorHandler.createDetailedError(
-        e,
-        errorMessage: '加载通知列表发生异常',
-        context: {'isRefresh': isRefresh, 'offset': _offset},
-      );
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
+          // 如果是刷新操作且没有通知，显示空状态提示
+          if (isRefresh && notifications.isEmpty) {
+            SnackbarUtils.showMaterialSnackbar(
+              context,
+              '暂无新通知',
+              duration: const Duration(seconds: 1),
+            );
+          }
+        } else {
+          logger.warning('获取通知列表失败，重试次数: ${_retryCount + 1}');
+          // 增加重试计数
           _retryCount++;
-        });
+          if (isRefresh) {
+            _hasMore = false;
+          }
 
-        // 显示错误提示
-        if (_retryCount <= _maxRetryCount) {
-          SnackbarUtils.showMaterialSnackbar(
-            context,
-            detailedError.message,
-            duration: const Duration(seconds: 2),
-          );
+          // 显示错误提示
+          if (mounted && _retryCount <= _maxRetryCount) {
+            final errorMessage = _retryCount == 1
+                ? '加载通知失败，正在重试...'
+                : '加载通知失败，${_maxRetryCount - _retryCount}次重试机会';
+
+            SnackbarUtils.showMaterialSnackbar(
+              context,
+              errorMessage,
+              duration: const Duration(seconds: 2),
+              isError: true,
+            );
+          } else if (mounted) {
+            // 达到最大重试次数，显示错误提示
+            SnackbarUtils.showMaterialSnackbar(
+              context,
+              '加载通知失败，请检查网络连接后重试',
+              duration: const Duration(seconds: 3),
+              isError: true,
+            );
+          }
         }
-      }
+      });
     }
   }
 
@@ -253,6 +234,22 @@ class _NotificationListState extends State<NotificationList>
       );
     }
 
+    // 加载状态：显示加载指示器
+    if (_isLoading && _notifications.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const LoadingIndicatorM3E(),
+              const SizedBox(height: 16),
+              const Text('正在加载通知...'),
+            ],
+          ),
+        ),
+      );
+    }
+
     // 空状态：已登录、无错误、但没有通知
     if (_notifications.isEmpty && !_isLoading) {
       return SliverFillRemaining(
@@ -287,44 +284,49 @@ class _NotificationListState extends State<NotificationList>
       delegate: SliverChildBuilderDelegate((context, index) {
         if (index < _notifications.length) {
           final notification = _notifications[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage:
-                  notification.fromUser?['attributes']?['avatarUrl'] != null
-                  ? NetworkImage(
-                      notification.fromUser!['attributes']!['avatarUrl'],
-                    )
-                  : null,
-              child: notification.fromUser?['attributes']?['avatarUrl'] == null
-                  ? Text(
-                      notification.fromUser?['attributes']?['username']?[0] ??
-                          '?',
-                    )
-                  : null,
-            ),
-            title: Text(_formatNotificationContent(notification)),
-            subtitle: Text(
-              TimeFormatter.formatLocalTime(notification.createdAt),
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodySmall?.color,
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundImage:
+                    notification.fromUser?['attributes']?['avatarUrl'] != null
+                    ? NetworkImage(
+                        notification.fromUser!['attributes']!['avatarUrl'],
+                      )
+                    : null,
+                child: notification.fromUser?['attributes']?['avatarUrl'] == null
+                    ? Text(
+                        notification.fromUser?['attributes']?['username']?[0] ??
+                            '?',
+                      )
+                    : null,
               ),
-            ),
-            trailing: notification.isRead
-                ? null
-                : Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.red,
+              title: Text(_formatNotificationContent(notification)),
+              subtitle: Text(
+                TimeFormatter.formatLocalTime(notification.createdAt),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+              trailing: notification.isRead
+                  ? null
+                  : Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.red,
+                      ),
                     ),
-                  ),
-            onTap: () {
-              // 跳转到相关主题帖
-              if (notification.subjectType == 'discussions') {
-                Get.toNamed('/discussion/${notification.subjectId}');
-              }
-            },
+              onTap: () {
+                // 跳转到相关主题帖
+                if (notification.subjectType == 'discussions') {
+                  Get.toNamed('/discussion/${notification.subjectId}');
+                }
+              },
+            ),
           );
         } else if (_hasMore) {
           // 异步加载更多
@@ -339,9 +341,16 @@ class _NotificationListState extends State<NotificationList>
           );
         } else {
           // 没有更多数据
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: Text('没有更多通知了')),
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Text(
+                '没有更多通知了',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+            ),
           );
         }
       }, childCount: _notifications.length + (_hasMore ? 1 : 0)),

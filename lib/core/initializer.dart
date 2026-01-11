@@ -17,6 +17,7 @@ import '../config/constants.dart';
 import '../core/service_locator.dart';
 import '../global_services/window_service.dart';
 import './cache_service.dart';
+import './logger.dart';
 
 /// 应用初始化器类，提供统一的应用初始化入口
 class AppInitializer {
@@ -26,25 +27,37 @@ class AppInitializer {
   ///
   /// 返回值：`Future<void>` - 表示初始化完成
   static Future<void> init() async {
+    // 记录初始化开始时间
+    final stopwatch = Stopwatch()..start();
+    logger.info('初始化开始');
+
     // 确保Flutter绑定已初始化，这是使用Flutter插件的前提
     WidgetsFlutterBinding.ensureInitialized();
+    logger.info('Flutter绑定初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
 
     // 初始化服务定位器，注册所有必要的服务
     ServiceLocator.init();
+    logger.info('服务定位器初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
 
     // 获取已注册的服务实例
     final api = Get.find<FlarumApi>();
-
-    // 初始化并设置应用窗口
-    await WindowService.initialize();
-    await WindowService.setupWindow();
-
-    // 初始化缓存服务
     final cacheService = Get.find<CacheService>();
-    await cacheService.initialize();
 
-    // 加载端点配置，确定应用要连接的后端服务器
-    await api.loadEndpoint();
+    // 并行初始化独立服务，提高初始化速度
+    await Future.wait([
+      // 初始化窗口（桌面平台）
+      _initWindow(),
+
+      // 初始化缓存服务
+      cacheService.initialize().then((_) {
+        logger.info('缓存服务初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+      }),
+
+      // 加载端点配置，确定应用要连接的后端服务器
+      api.loadEndpoint().then((_) {
+        logger.info('端点配置加载完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+      }),
+    ]);
 
     // 检查是否有保存的端点配置
     final prefs = await SharedPreferences.getInstance();
@@ -53,6 +66,19 @@ class AppInitializer {
     // 如果没有保存的端点，使用默认端点并保存
     if (!hasEndpoint) {
       await api.saveEndpoint(api.baseUrl!);
+      logger.info('默认端点保存完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+    }
+
+    // 记录初始化完成时间
+    stopwatch.stop();
+    logger.info('初始化完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
+  }
+
+  /// 初始化窗口，仅在桌面平台上执行
+  static Future<void> _initWindow() async {
+    if (WindowService.isDesktop) {
+      await WindowService.initialize();
+      await WindowService.setupWindow();
     }
   }
 }

@@ -65,8 +65,14 @@ class ThemeService {
   /// 返回值：
   /// - `Future<ThemeData>`: 配置好的亮色主题
   Future<ThemeData> createLightTheme(ColorScheme? lightDynamic) async {
-    final useDynamicColor = await _appearanceService.loadUseDynamicColor();
-    final accentColorName = await _appearanceService.loadAccentColor();
+    // 并行加载主题设置，提高性能
+    final settings = await Future.wait([
+      _appearanceService.loadUseDynamicColor(),
+      _appearanceService.loadAccentColor(),
+    ]);
+    
+    final useDynamicColor = settings[0] as bool;
+    final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);
 
     final colorScheme = useDynamicColor && lightDynamic != null
@@ -92,8 +98,14 @@ class ThemeService {
   /// 返回值：
   /// - `Future<ThemeData>`: 配置好的暗色主题
   Future<ThemeData> createDarkTheme(ColorScheme? darkDynamic) async {
-    final useDynamicColor = await _appearanceService.loadUseDynamicColor();
-    final accentColorName = await _appearanceService.loadAccentColor();
+    // 并行加载主题设置，提高性能
+    final settings = await Future.wait([
+      _appearanceService.loadUseDynamicColor(),
+      _appearanceService.loadAccentColor(),
+    ]);
+    
+    final useDynamicColor = settings[0] as bool;
+    final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);
 
     final colorScheme = useDynamicColor && darkDynamic != null

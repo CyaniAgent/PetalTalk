@@ -147,7 +147,9 @@ class _UiSettingPageState extends State<UiSettingPage> {
             )
           : ListView(
               children: [
-                ...widget.settingItems.map((item) {
+                ...widget.settingItems.asMap().entries.map((entry) {
+                  final int index = entry.key;
+                  final item = entry.value;
                   return Card(
                     margin: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -158,6 +160,8 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       children: [
                         ListTile(
                           onTap: () {
+                            // 更新选中索引，确保设置页面与选项同步
+                            selectedIndex.value = index;
                             // 跳转到一个新页面，显示该项的内容
                             Get.to(
                               () => Scaffold(
@@ -174,6 +178,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                     ),
                   );
                 }),
+
                 const SizedBox(height: 16),
                 Obx(
                   () => Visibility(
