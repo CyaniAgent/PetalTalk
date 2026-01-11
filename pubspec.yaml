@@ -103,7 +103,7 @@ flutter:
   # 资源目录
   assets:
     - assets/
-    - assets/LICENSE
+    - LICENSE
     - assets/icons/
     - assets/icons/logo.png
 
