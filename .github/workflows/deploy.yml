@@ -183,8 +183,7 @@ jobs:
 
       - name: Build iOS
         if: matrix.name == 'ios'
-        # 增加 --simulator 参数
-        run: flutter build ios --release --no-codesign --simulator
+        run: flutter build ios --release --no-codesign
 
       - name: Build macOS
         if: matrix.name == 'macos'
@@ -222,9 +221,9 @@ jobs:
             powershell Compress-Archive build/windows/x64/runner/Release windows-release-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip
           elif [ "${{ matrix.name }}" = "ios" ]; then
             mkdir Payload
-            cp -r build/ios/iphonesimulator/Runner.app Payload/
+            cp -r build/ios/iphoneos/Runner.app Payload/
             zip -r ios-release-${{ steps.read_build_env.outputs.FULL_VERSION }}.ipa Payload/
-            zip -r ios-simulator-release-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/ios/iphonesimulator/Runner.app
+            zip -r ios-release-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/ios/iphoneos
           elif [ "${{ matrix.name }}" = "macos" ]; then
             zip -r macos-release-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/macos/Build/Products/Release
           fi
