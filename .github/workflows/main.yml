@@ -31,4 +31,4 @@ jobs:
       # 删掉后，CI 就会跳过测试，直接去构建 APK。
 
       - name: Build APK
-        run: flutter build apk
+        run: flutter build apk --debug
