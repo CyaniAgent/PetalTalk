@@ -31,7 +31,29 @@ class NotificationService {
     // 生成缓存键
     final cacheKey = 'cache_notifications_$offset';
     
+    // 尝试使用缓存数据
+    List<notification_model.Notification>? cachedNotifications;
     try {
+      final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(
+        cacheKey,
+      );
+      if (cachedResponse != null) {
+        logger.info('尝试使用缓存获取通知列表，缓存键: $cacheKey');
+        cachedNotifications = _parseNotificationResponse(cachedResponse);
+        logger.debug('成功解析缓存通知列表，共 ${cachedNotifications.length} 条通知');
+      }
+    } catch (cacheError) {
+      // 缓存读取失败，记录错误但继续执行
+      final cacheDetailedError = ErrorHandler.createDetailedError(
+        cacheError,
+        errorMessage: '获取通知缓存失败',
+        context: {'cacheKey': cacheKey, 'offset': offset},
+      );
+      logger.error('获取通知缓存失败: $cacheDetailedError', cacheError);
+    }
+    
+    // 调用API获取最新数据
+    Future<List<notification_model.Notification>> apiCall() async {
       logger.info('开始获取通知列表，偏移量: $offset');
       final response = await _api.get(
         '/api/notifications',
@@ -41,28 +63,23 @@ class NotificationService {
       if (response.statusCode == 200) {
         final newData = response.data;
         final List<dynamic> notificationsJson = newData['data'];
-        final List<dynamic> includedJson = newData['included'] ?? [];
-
         logger.debug('通知列表API响应成功，数据数量: ${notificationsJson.length}');
         
-        // 尝试获取当前缓存数据
-        Map<String, dynamic>? cachedResponse;
+        // 比较数据是否一致，不一致则更新缓存
+        bool shouldUpdateCache = true;
         try {
-          cachedResponse = await _cacheService
-              .getCache<Map<String, dynamic>>(cacheKey);
-        } catch (cacheError) {
-          // 缓存读取失败，记录错误但继续执行
-          final cacheDetailedError = ErrorHandler.createDetailedError(
-            cacheError,
-            errorMessage: '获取通知缓存失败',
-            context: {'cacheKey': cacheKey, 'offset': offset},
+          final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(
+            cacheKey,
           );
-          logger.error('获取通知缓存失败: $cacheDetailedError', cacheError);
+          if (cachedResponse != null) {
+            shouldUpdateCache = _areNotificationsDifferent(cachedResponse, newData);
+          }
+        } catch (cacheError) {
+          // 缓存读取失败，默认更新缓存
+          shouldUpdateCache = true;
         }
         
-        // 比较数据是否一致，不一致则更新缓存
-        if (cachedResponse == null ||
-            _areNotificationsDifferent(cachedResponse, newData)) {
+        if (shouldUpdateCache) {
           // 将完整的响应数据存入缓存，有效期30分钟
           try {
             await _cacheService.setCache(key: cacheKey, data: newData);
@@ -77,95 +94,56 @@ class NotificationService {
             logger.error('更新通知缓存失败: $cacheDetailedError', cacheError);
           }
         }
-
-        // 构建included数据的索引映射，便于快速查找
-        final Map<String, Map<String, dynamic>> includedData = {};
-        for (final item in includedJson) {
-          final key = '${item['type']}_${item['id']}';
-          includedData[key] = item;
-        }
-
-        // 解析通知数据
-        final notifications = notificationsJson
-            .map(
-              (json) =>
-                  notification_model.Notification.fromJson(json, includedData),
-            )
-            .toList();
-
-        logger.info('成功解析通知列表，共 ${notifications.length} 条通知');
-        return notifications;
+        
+        return _parseNotificationResponse(newData);
       } else {
         logger.warning('通知列表API响应失败，状态码: ${response.statusCode}');
-        
-        // 创建详细错误信息
-        final detailedError = ErrorHandler.createDetailedError(
-          Exception('API响应失败'),
-          errorMessage: '获取通知列表失败',
-          context: {
-            'statusCode': response.statusCode,
-            'offset': offset,
-            'responseData': response.data,
-          },
-        );
-        logger.error('API响应失败详细信息: $detailedError');
+        throw Exception('API响应失败，状态码: ${response.statusCode}');
       }
-      return null;
-    } catch (e, stackTrace) {
-      // 创建详细错误信息
-      final detailedError = ErrorHandler.createDetailedError(
-        e,
-        errorMessage: '获取通知列表发生异常',
-        context: {'offset': offset},
-      );
-      
-      logger.error('获取通知列表发生异常: $detailedError', e, stackTrace);
-
-      // 如果网络请求失败，尝试使用缓存数据（包括过期缓存）
-      try {
-        final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(
-          cacheKey,
-        );
-        if (cachedResponse != null) {
-          logger.info('网络请求失败，使用缓存获取通知列表，缓存键: $cacheKey');
-
-          final data = cachedResponse;
-          final List<dynamic> notificationsJson = data['data'];
-          final List<dynamic> includedJson = data['included'] ?? [];
-
-          // 构建included数据的索引映射，便于快速查找
-          final Map<String, Map<String, dynamic>> includedData = {};
-          for (final item in includedJson) {
-            final key = '${item['type']}_${item['id']}';
-            includedData[key] = item;
-          }
-
-          // 解析通知数据
-          final notifications = notificationsJson
-              .map(
-                (json) =>
-                    notification_model.Notification.fromJson(json, includedData),
-              )
-              .toList();
-
-          logger.info('成功从缓存解析通知列表，共 ${notifications.length} 条通知');
-          return notifications;
-        } else {
-          logger.warning('缓存中没有找到通知数据，缓存键: $cacheKey');
-        }
-      } catch (cacheError) {
-        // 缓存读取失败，记录错误
-        final cacheDetailedError = ErrorHandler.createDetailedError(
-          cacheError,
-          errorMessage: '获取通知缓存失败',
-          context: {'cacheKey': cacheKey, 'offset': offset},
-        );
-        logger.error('获取通知缓存失败: $cacheDetailedError', cacheError);
-      }
-      
-      // 所有尝试都失败，返回null
-      return null;
     }
+    
+    // 使用ErrorHandler处理API调用
+    final apiNotifications = await ErrorHandler().handleApiCall(
+      apiCall,
+      errorMessage: '获取通知列表失败',
+      context: {'offset': offset},
+    );
+    
+    // 如果API调用成功，返回API结果
+    if (apiNotifications != null) {
+      logger.info('成功获取最新通知列表，共 ${apiNotifications.length} 条通知');
+      return apiNotifications;
+    }
+    
+    // 如果API调用失败，返回缓存数据（如果有）
+    if (cachedNotifications != null) {
+      logger.info('API调用失败，返回缓存通知列表，共 ${cachedNotifications.length} 条通知');
+      return cachedNotifications;
+    }
+    
+    // 所有尝试都失败，返回null
+    logger.warning('获取通知列表失败，没有可用的缓存数据');
+    return null;
+  }
+  
+  /// 解析通知响应数据为通知模型列表
+  List<notification_model.Notification> _parseNotificationResponse(Map<String, dynamic> responseData) {
+    final List<dynamic> notificationsJson = responseData['data'];
+    final List<dynamic> includedJson = responseData['included'] ?? [];
+    
+    // 构建included数据的索引映射，便于快速查找
+    final Map<String, Map<String, dynamic>> includedData = {};
+    for (final item in includedJson) {
+      final key = '${item['type']}_${item['id']}';
+      includedData[key] = item;
+    }
+    
+    // 解析通知数据
+    return notificationsJson
+        .map(
+          (json) => notification_model.Notification.fromJson(json, includedData),
+        )
+        .toList();
   }
 
   /// 比较两个通知列表数据是否不同

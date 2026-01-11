@@ -13,14 +13,24 @@ import 'core/initializer.dart';
 import 'global_services/window_service.dart';
 import 'global_services/theme_service.dart';
 import 'config/routes.dart';
+import 'core/logger.dart';
 
 /// 应用主入口函数
 void main() async {
+  // 记录应用启动开始时间
+  final stopwatch = Stopwatch()..start();
+  logger.info('应用启动开始');
+
   // 初始化应用
   await AppInitializer.init();
+  logger.info('应用初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
 
   // 启动应用
   runApp(const MyApp());
+
+  // 记录应用启动完成时间
+  stopwatch.stop();
+  logger.info('应用启动完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
 }
 
 /// 应用根组件，管理应用的主题和窗口状态

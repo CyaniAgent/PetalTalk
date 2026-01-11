@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:m3e_collection/m3e_collection.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/services/post_service.dart';
 import '../../api/services/discussion_service.dart';
+import '../../api/flarum_api.dart';
 import '../../api/models/discussion.dart';
 import '../../api/models/post.dart';
 import '../../utils/time_formatter.dart';
@@ -61,8 +63,10 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
     // 1. 先从缓存获取数据并显示
     final cacheService = Get.find<CacheService>();
     final cacheKey = 'cache_discussion_$id';
-    final cachedDiscussion = await cacheService.getCache<Map<String, dynamic>>(cacheKey);
-    
+    final cachedDiscussion = await cacheService.getCache<Map<String, dynamic>>(
+      cacheKey,
+    );
+
     if (cachedDiscussion != null && mounted) {
       // 处理缓存数据，获取用户和标签信息
       if (cachedDiscussion.containsKey('included')) {
@@ -97,13 +101,13 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
         });
       }
     }
-    
+
     // 2. 后台请求最新数据
     final result = await _discussionService.getDiscussion(id);
-    
+
     // 检查组件是否仍然挂载
     if (!mounted) return;
-    
+
     if (result != null && result.containsKey('data')) {
       // 处理最新数据，获取用户和标签信息
       if (result.containsKey('included')) {
@@ -124,15 +128,16 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           }
         }
       }
-      
+
       final newDiscussion = Discussion.fromJson(result['data']);
-      bool isNewData = _discussion == null || _discussion!.id != newDiscussion.id;
-      
+      bool isNewData =
+          _discussion == null || _discussion!.id != newDiscussion.id;
+
       setState(() {
         _discussion = newDiscussion;
         _isLoading = false;
       });
-      
+
       // 如果是新数据或没有缓存，加载帖子；否则只在后台更新
       if (isNewData) {
         _loadPosts();
@@ -150,13 +155,15 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       }
     }
   }
-  
+
   // 从缓存加载帖子
   Future<void> _loadPostsFromCache(String discussionId) async {
     final cacheService = Get.find<CacheService>();
     final cacheKey = 'cache_posts_for_discussion_${discussionId}_0_20';
-    final cachedPosts = await cacheService.getCache<Map<String, dynamic>>(cacheKey);
-    
+    final cachedPosts = await cacheService.getCache<Map<String, dynamic>>(
+      cacheKey,
+    );
+
     if (cachedPosts != null && mounted) {
       // 处理缓存的帖子数据
       if (cachedPosts.containsKey('included')) {
@@ -173,23 +180,23 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           }
         }
       }
-      
+
       final List<Post> posts = (cachedPosts['data'] as List)
           .map((post) => Post.fromJson(post))
           .toList();
-      
+
       setState(() {
         _posts.addAll(posts);
       });
     }
   }
-  
+
   // 后台加载帖子并更新
   Future<void> _loadPostsInBackground() async {
     if (_discussion == null) return;
-    
+
     final result = await _postService.getPostsForDiscussion(_discussion!.id);
-    
+
     if (result != null && mounted) {
       // 处理最新帖子数据
       if (result.containsKey('included')) {
@@ -206,15 +213,17 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
           }
         }
       }
-      
+
       final List<Post> newPosts = (result['data'] as List)
           .map((post) => Post.fromJson(post))
           .toList();
-      
+
       // 只添加新帖子
       final existingPostIds = _posts.map((post) => post.id).toSet();
-      final postsToAdd = newPosts.where((post) => !existingPostIds.contains(post.id)).toList();
-      
+      final postsToAdd = newPosts
+          .where((post) => !existingPostIds.contains(post.id))
+          .toList();
+
       if (postsToAdd.isNotEmpty && mounted) {
         setState(() {
           _posts.addAll(postsToAdd);
@@ -233,7 +242,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
       _loadPostsInBackground();
       return;
     }
-    
+
     // 2. 如果没有缓存帖子，显示加载状态并获取最新数据
     if (mounted) {
       setState(() {
@@ -442,11 +451,76 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                 }
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // 更多操作
-              SnackbarUtils.showDevelopmentInProgress(context);
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'browser',
+                child: Row(
+                  children: const [
+                    Icon(Icons.open_in_browser),
+                    SizedBox(width: 8),
+                    Text('浏览器打开'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: const [
+                    Icon(Icons.share),
+                    SizedBox(width: 8),
+                    Text('分享链接'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) async {
+              if (_discussion != null) {
+                // 获取完整的讨论链接
+                final flarumApi = Get.find<FlarumApi>();
+                final baseUrl = flarumApi.baseUrl;
+
+                // 确保baseUrl不为空
+                if (baseUrl == null || baseUrl.isEmpty) {
+                  SnackbarUtils.showMaterialSnackbar(
+                    context,
+                    '无法获取API端点，请先设置端点',
+                  );
+                  return;
+                }
+
+                final discussionUrl =
+                    '$baseUrl/d/${_discussion!.id}-${_discussion!.slug}';
+
+                if (value == 'browser') {
+                  // 在浏览器中打开
+                  try {
+                    final uri = Uri.parse(discussionUrl);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } else {
+                      SnackbarUtils.showMaterialSnackbar(context, '无法打开链接');
+                    }
+                  } catch (e) {
+                    SnackbarUtils.showMaterialSnackbar(context, '无法打开链接');
+                  }
+                } else if (value == 'share') {
+                  // 分享链接
+                  try {
+                    await launchUrl(
+                      Uri.parse(
+                        'mailto:?subject=${Uri.encodeComponent(_discussion!.title)}&body=${Uri.encodeComponent(discussionUrl)}',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  } catch (e) {
+                    SnackbarUtils.showMaterialSnackbar(context, '分享失败');
+                  }
+                }
+              }
             },
           ),
         ],
