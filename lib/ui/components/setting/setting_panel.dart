@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '/utils/snackbar_utils.dart';
+import '../../../utils/snackbar_utils.dart';
 
 import '../../../state/setting_state.dart';
+import '../../../core/logger.dart';
+import '../../../config/constants.dart';
 
 class UiSettingPage extends StatefulWidget {
   final List<Map<String, dynamic>> settingItems;
@@ -25,19 +27,28 @@ class UiSettingPage extends StatefulWidget {
 }
 
 class _UiSettingPageState extends State<UiSettingPage> {
+  final AppLogger _logger = AppLogger();
   late final UiSettingController settingController;
   final RxInt selectedIndex = 0.obs;
-  final double wideScreenThreshold = 768;
+  final double wideScreenThreshold = Constants.wideScreenThreshold;
 
   @override
   void initState() {
     super.initState();
+    _logger.info('UiSettingPage初始化');
+    _logger.debug(
+      '设置项数量: ${widget.settingItems.length}, 显示退出按钮: ${widget.showLogoutButton}, 标题: ${widget.title}',
+    );
     settingController = Get.put(UiSettingController());
     settingController.showLogoutButton = widget.showLogoutButton;
+    _logger.debug('设置退出按钮显示状态: ${widget.showLogoutButton}');
+    _logger.info('UiSettingPage初始化完成');
   }
 
   @override
   void dispose() {
+    _logger.info('UiSettingPage销毁');
+    _logger.debug('删除UiSettingController');
     Get.delete<UiSettingController>();
     super.dispose();
   }
@@ -64,34 +75,47 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   () => NavigationDrawer(
                     selectedIndex: selectedIndex.value,
                     onDestinationSelected: (int index) {
+                      _logger.debug('宽屏模式 - 导航项选择: 索引=$index');
                       // 只有点击设置项时才更新选中索引
                       if (index < widget.settingItems.length) {
+                        _logger.info(
+                          '切换到设置项: ${widget.settingItems[index]['title']}',
+                        );
                         selectedIndex.value = index;
                       }
                       // 处理退出登录
                       else if (settingController.userLogin.value &&
                           index == widget.settingItems.length) {
+                        _logger.info('执行退出登录操作');
                         if (widget.onLogout != null) {
+                          _logger.debug('使用外部onLogout回调');
                           widget.onLogout!();
                         } else {
+                          _logger.debug('使用settingController.loginOut()');
                           settingController.loginOut();
                         }
                       }
                       // 处理关于
                       else if (settingController.userLogin.value &&
                           index == widget.settingItems.length + 1) {
+                        _logger.info('执行关于操作');
                         if (widget.onAbout != null) {
+                          _logger.debug('使用外部onAbout回调');
                           widget.onAbout!();
                         } else {
-                          SnackbarUtils.showMaterialSnackbar(context, '关于');
+                          _logger.debug('显示关于提示');
+                          SnackbarUtils.showSnackbar('关于');
                         }
                       }
                       // 处理未登录状态下的关于
                       else if (index == widget.settingItems.length) {
+                        _logger.info('执行关于操作（未登录状态）');
                         if (widget.onAbout != null) {
+                          _logger.debug('使用外部onAbout回调');
                           widget.onAbout!();
                         } else {
-                          SnackbarUtils.showMaterialSnackbar(context, '关于');
+                          _logger.debug('显示关于提示');
+                          SnackbarUtils.showSnackbar('关于');
                         }
                       }
                     },
@@ -160,9 +184,14 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       children: [
                         ListTile(
                           onTap: () {
+                            _logger.debug(
+                              '窄屏模式 - 点击设置项: ${item['title']}, 索引=$index',
+                            );
                             // 更新选中索引，确保设置页面与选项同步
                             selectedIndex.value = index;
+                            _logger.info('切换到设置项: ${item['title']}');
                             // 跳转到一个新页面，显示该项的内容
+                            _logger.debug('跳转到设置详情页面');
                             Get.to(
                               () => Scaffold(
                                 appBar: AppBar(title: Text(item['title'])),
@@ -192,7 +221,16 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       ),
                       elevation: 2,
                       child: ListTile(
-                        onTap: widget.onLogout ?? settingController.loginOut,
+                        onTap: () {
+                          _logger.info('窄屏模式 - 执行退出登录操作');
+                          if (widget.onLogout != null) {
+                            _logger.debug('使用外部onLogout回调');
+                            widget.onLogout!();
+                          } else {
+                            _logger.debug('使用settingController.loginOut()');
+                            settingController.loginOut();
+                          }
+                        },
                         leading: const Icon(Icons.logout_outlined),
                         title: const Text('退出登录'),
                       ),
@@ -206,7 +244,16 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   ),
                   elevation: 2,
                   child: ListTile(
-                    onTap: widget.onAbout ?? () => Get.toNamed('/about'),
+                    onTap: () {
+                      _logger.info('窄屏模式 - 执行关于操作');
+                      if (widget.onAbout != null) {
+                        _logger.debug('使用外部onAbout回调');
+                        widget.onAbout!();
+                      } else {
+                        _logger.debug('跳转到关于页面');
+                        Get.toNamed('/about');
+                      }
+                    },
                     leading: const Icon(Icons.info_outlined),
                     title: const Text('关于'),
                   ),

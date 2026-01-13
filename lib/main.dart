@@ -14,11 +14,18 @@ import 'global_services/window_service.dart';
 import 'global_services/theme_service.dart';
 import 'config/routes.dart';
 import 'core/logger.dart';
+import 'utils/snackbar_utils.dart';
 
 /// 应用主入口函数
 void main() async {
   // 记录应用启动开始时间
   final stopwatch = Stopwatch()..start();
+
+  // 确保Flutter绑定已初始化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化日志系统
+  await logger.initialize();
   logger.info('应用启动开始');
 
   // 初始化应用
@@ -114,6 +121,9 @@ class _MyAppState extends State<MyApp> {
               title: 'PetalTalk',
               debugShowCheckedModeBanner: false,
               builder: (context, child) {
+                // 初始化SnackbarUtils
+                SnackbarUtils.init(ScaffoldMessenger.of(context));
+
                 // 检测是否为桌面平台
                 final bool isDesktop =
                     Platform.isWindows || Platform.isMacOS || Platform.isLinux;

@@ -183,7 +183,7 @@ jobs:
 
       - name: Build iOS
         if: matrix.name == 'ios'
-        run: flutter build ios --debug --no-codesign --simulator
+        run: flutter build ios --release --no-codesign
 
       - name: Build macOS
         if: matrix.name == 'macos'

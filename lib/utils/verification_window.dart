@@ -37,14 +37,14 @@ class _VerificationWindowState extends State<VerificationWindow> {
       await _controller.initialize();
       await _controller.setBackgroundColor(Colors.transparent);
       await _controller.setPopupWindowPolicy(WebviewPopupWindowPolicy.deny);
-      
+
       if (!mounted) return;
       setState(() {
         _isWebviewInitialized = true;
       });
 
       await _controller.loadUrl(widget.url);
-      
+
       // Start checking for the verification cookie
       _startCookieCheck();
     } catch (e) {
@@ -56,26 +56,30 @@ class _VerificationWindowState extends State<VerificationWindow> {
   }
 
   void _startCookieCheck() {
-    _cookieTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+    _cookieTimer = Timer.periodic(const Duration(milliseconds: 500), (
+      timer,
+    ) async {
       if (!_controller.value.isInitialized) return;
 
       try {
         // webview_windows doesn't support getCookies, use JS to get document.cookie
-        final cookiesString = await _controller.executeScript('document.cookie');
-        
+        final cookiesString = await _controller.executeScript(
+          'document.cookie',
+        );
+
         if (cookiesString != null && cookiesString.isNotEmpty) {
-           // Parse "key=value; key2=value2"
-           final cookies = cookiesString.toString().split(';');
-           for (final cookie in cookies) {
-             final parts = cookie.trim().split('=');
-             if (parts.isNotEmpty && parts[0] == 'acw_sc__v2') {
-               // Found it!
-               if (parts.length > 1) {
-                  _onVerificationSuccess(parts[1]);
-                  return;
-               }
-             }
-           }
+          // Parse "key=value; key2=value2"
+          final cookies = cookiesString.toString().split(';');
+          for (final cookie in cookies) {
+            final parts = cookie.trim().split('=');
+            if (parts.isNotEmpty && parts[0] == 'acw_sc__v2') {
+              // Found it!
+              if (parts.length > 1) {
+                _onVerificationSuccess(parts[1]);
+                return;
+              }
+            }
+          }
         }
       } catch (_) {
         // Ignore JS errors
@@ -109,9 +113,7 @@ class _VerificationWindowState extends State<VerificationWindow> {
           width: 800,
           height: 600,
           clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
           child: Column(
             children: [
               // Title Bar

@@ -19,10 +19,10 @@ class NotificationService {
   final CacheService _cacheService = Get.find<CacheService>();
 
   /// 获取通知列表
-  /// 
+  ///
   /// 参数：
   /// - offset: 偏移量，用于分页
-  /// 
+  ///
   /// 返回值：
   /// - `Future<List<notification_model.Notification>?>`: 包含通知模型的列表，失败返回null
   Future<List<notification_model.Notification>?> getNotifications({
@@ -30,7 +30,7 @@ class NotificationService {
   }) async {
     // 生成缓存键
     final cacheKey = 'cache_notifications_$offset';
-    
+
     // 尝试使用缓存数据
     List<notification_model.Notification>? cachedNotifications;
     try {
@@ -51,7 +51,7 @@ class NotificationService {
       );
       logger.error('获取通知缓存失败: $cacheDetailedError', cacheError);
     }
-    
+
     // 调用API获取最新数据
     Future<List<notification_model.Notification>> apiCall() async {
       logger.info('开始获取通知列表，偏移量: $offset');
@@ -64,21 +64,23 @@ class NotificationService {
         final newData = response.data;
         final List<dynamic> notificationsJson = newData['data'];
         logger.debug('通知列表API响应成功，数据数量: ${notificationsJson.length}');
-        
+
         // 比较数据是否一致，不一致则更新缓存
         bool shouldUpdateCache = true;
         try {
-          final cachedResponse = await _cacheService.getCache<Map<String, dynamic>>(
-            cacheKey,
-          );
+          final cachedResponse = await _cacheService
+              .getCache<Map<String, dynamic>>(cacheKey);
           if (cachedResponse != null) {
-            shouldUpdateCache = _areNotificationsDifferent(cachedResponse, newData);
+            shouldUpdateCache = _areNotificationsDifferent(
+              cachedResponse,
+              newData,
+            );
           }
         } catch (cacheError) {
           // 缓存读取失败，默认更新缓存
           shouldUpdateCache = true;
         }
-        
+
         if (shouldUpdateCache) {
           // 将完整的响应数据存入缓存，有效期30分钟
           try {
@@ -89,59 +91,66 @@ class NotificationService {
             final cacheDetailedError = ErrorHandler.createDetailedError(
               cacheError,
               errorMessage: '更新通知缓存失败',
-              context: {'cacheKey': cacheKey, 'offset': offset, 'dataCount': notificationsJson.length},
+              context: {
+                'cacheKey': cacheKey,
+                'offset': offset,
+                'dataCount': notificationsJson.length,
+              },
             );
             logger.error('更新通知缓存失败: $cacheDetailedError', cacheError);
           }
         }
-        
+
         return _parseNotificationResponse(newData);
       } else {
         logger.warning('通知列表API响应失败，状态码: ${response.statusCode}');
         throw Exception('API响应失败，状态码: ${response.statusCode}');
       }
     }
-    
+
     // 使用ErrorHandler处理API调用
     final apiNotifications = await ErrorHandler().handleApiCall(
       apiCall,
       errorMessage: '获取通知列表失败',
       context: {'offset': offset},
     );
-    
+
     // 如果API调用成功，返回API结果
     if (apiNotifications != null) {
       logger.info('成功获取最新通知列表，共 ${apiNotifications.length} 条通知');
       return apiNotifications;
     }
-    
+
     // 如果API调用失败，返回缓存数据（如果有）
     if (cachedNotifications != null) {
       logger.info('API调用失败，返回缓存通知列表，共 ${cachedNotifications.length} 条通知');
       return cachedNotifications;
     }
-    
+
     // 所有尝试都失败，返回null
     logger.warning('获取通知列表失败，没有可用的缓存数据');
     return null;
   }
-  
+
   /// 解析通知响应数据为通知模型列表
-  List<notification_model.Notification> _parseNotificationResponse(Map<String, dynamic> responseData) {
+  List<notification_model.Notification> _parseNotificationResponse(
+    Map<String, dynamic> responseData,
+  ) {
     final List<dynamic> notificationsJson = responseData['data'];
     final List<dynamic> includedJson = responseData['included'] ?? [];
-    
+
     // 构建included数据的索引映射，便于快速查找
     final Map<String, Map<String, dynamic>> includedData = {};
     for (final item in includedJson) {
       final key = '${item['type']}_${item['id']}';
       includedData[key] = item;
     }
-    
+
     // 解析通知数据
     return notificationsJson
         .map(
-          (json) => notification_model.Notification.fromJson(json, includedData),
+          (json) =>
+              notification_model.Notification.fromJson(json, includedData),
         )
         .toList();
   }

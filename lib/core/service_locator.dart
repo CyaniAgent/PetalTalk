@@ -11,6 +11,7 @@ import '../api/services/notification_service.dart';
 import '../api/services/post_service.dart';
 import '../global_services/window_service.dart';
 import '../global_services/theme_service.dart';
+import '../global_services/notification_service.dart';
 import '../state/main_state.dart';
 import './cache_service.dart';
 
@@ -27,18 +28,19 @@ class ServiceLocator {
   /// 非关键服务使用懒加载，只有在实际使用时才创建实例
   static void init() {
     // 先注册基础服务和全局服务，确保它们在依赖它们的服务之前被注册
-    
+
     // 注册关键全局服务（永久单例）
     Get.put(WindowService(), permanent: true);
     Get.put(ThemeService(), permanent: true);
     Get.put(CacheService(), permanent: true);
-    
+    Get.put(GlobalNotificationService(), permanent: true);
+
     // 注册核心API服务（依赖CacheService，永久单例）
     Get.put(FlarumApi(), permanent: true);
-    
+
     // 注册状态管理服务（永久单例）
     Get.put(UiMainController(), permanent: true);
-    
+
     // 注册非关键API服务（懒加载，只有在实际使用时才创建实例）
     Get.lazyPut(() => AuthService(), fenix: true);
     Get.lazyPut(() => DiscussionService(), fenix: true);

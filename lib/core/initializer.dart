@@ -8,7 +8,6 @@
 /// 5. 确保应用有有效的端点配置
 library;
 
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +15,7 @@ import '../api/flarum_api.dart';
 import '../config/constants.dart';
 import '../core/service_locator.dart';
 import '../global_services/window_service.dart';
+import '../global_services/notification_service.dart';
 import './cache_service.dart';
 import './logger.dart';
 
@@ -30,10 +30,6 @@ class AppInitializer {
     // 记录初始化开始时间
     final stopwatch = Stopwatch()..start();
     logger.info('初始化开始');
-
-    // 确保Flutter绑定已初始化，这是使用Flutter插件的前提
-    WidgetsFlutterBinding.ensureInitialized();
-    logger.info('Flutter绑定初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
 
     // 初始化服务定位器，注册所有必要的服务
     ServiceLocator.init();
@@ -51,6 +47,11 @@ class AppInitializer {
       // 初始化缓存服务
       cacheService.initialize().then((_) {
         logger.info('缓存服务初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+      }),
+
+      // 初始化通知服务
+      GlobalNotificationService().initialize().then((_) {
+        logger.info('通知服务初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
       }),
 
       // 加载端点配置，确定应用要连接的后端服务器

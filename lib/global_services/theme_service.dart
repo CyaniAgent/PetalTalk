@@ -70,7 +70,7 @@ class ThemeService {
       _appearanceService.loadUseDynamicColor(),
       _appearanceService.loadAccentColor(),
     ]);
-    
+
     final useDynamicColor = settings[0] as bool;
     final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);
@@ -103,7 +103,7 @@ class ThemeService {
       _appearanceService.loadUseDynamicColor(),
       _appearanceService.loadAccentColor(),
     ]);
-    
+
     final useDynamicColor = settings[0] as bool;
     final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);

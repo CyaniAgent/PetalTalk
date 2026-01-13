@@ -14,7 +14,7 @@ publish_to: "none" # 如果你想发布到pub.dev，请删除这一行
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # 在Windows中，build-name用作产品版本和文件版本的主要、次要和补丁部分，
 # 而build-number用作构建后缀。
-version: 0.0.9+000916
+version: 0.0.10+001010
 
 environment:
   sdk: ^3.10.4
@@ -64,6 +64,10 @@ dependencies:
   permission_handler: ^12.0.1
   # 动态取色
   dynamic_color: ^1.7.0
+  # 文件路径
+  path_provider: ^2.1.2
+  # GUID生成
+  flutter_guid: ^0.3.1
 
   # 网络
   dio: ^5.4.1
@@ -81,6 +85,10 @@ dependencies:
   # M3E 组件库
   m3e_collection: ^0.3.7
   webview_windows: ^0.4.0
+  # 推送通知
+  flutter_local_notifications: ^19.5.0
+  # 通知权限处理
+  flutter_native_timezone: ^2.0.0
 
 dev_dependencies:
   flutter_test:

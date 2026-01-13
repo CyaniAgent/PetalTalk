@@ -1,11 +1,11 @@
 /// Flarum API 客户端，负责与 Flarum 后端进行通信
-/// 
+///
 /// 该类提供了：
 /// 1. 基于 Dio 的 HTTP 客户端封装
 /// 2. 多端点管理功能
 /// 3. 认证令牌管理
 /// 4. 统一的请求方法（GET, POST, PUT, DELETE, PATCH）
-/// 
+///
 /// 使用单例模式，确保在应用中只有一个 API 客户端实例
 library;
 
@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 import '../utils/verification_window.dart';
+import '../core/logger.dart';
 
 /// Flarum API 客户端类，封装了与 Flarum 后端通信的所有功能
 class FlarumApi {
@@ -33,7 +34,6 @@ class FlarumApi {
 
   /// Dio HTTP客户端实例
   late Dio _dio;
-
 
   /// Cookie管理器
   late CookieJar _cookieJar;
@@ -66,6 +66,8 @@ class FlarumApi {
   /// 3. Cookie管理器
   /// 4. 认证拦截器
   void _initDio() {
+    logger.info('FlarumApi: 初始化Dio客户端，baseUrl: $_baseUrl');
+
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl!,
@@ -97,6 +99,29 @@ class FlarumApi {
     _cookieJar = CookieJar();
     _dio.interceptors.add(CookieManager(_cookieJar));
 
+    // 添加请求日志拦截器
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          logger.debug('FlarumApi: 发送请求 - ${options.method} ${options.uri}');
+          if (options.data != null) {
+            logger.debug('FlarumApi: 请求数据 - ${options.data}');
+          }
+          if (_token != null) {
+            options.headers['Authorization'] = 'Token $_token';
+          }
+          return handler.next(options);
+        },
+
+        onResponse: (response, handler) {
+          logger.debug(
+            'FlarumApi: 收到响应 - ${response.statusCode} ${response.requestOptions.uri}',
+          );
+          return handler.next(response);
+        },
+      ),
+    );
+
     // 添加认证拦截器
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -107,58 +132,59 @@ class FlarumApi {
           return handler.next(options);
         },
       ),
-      ),
     );
 
     // 添加错误拦截器（处理WAF验证）
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException e, ErrorInterceptorHandler handler) async {
+          logger.error(
+            'FlarumApi: 请求错误 - ${e.requestOptions.uri}',
+            e,
+            e.stackTrace,
+          );
+
           // 检查是否为WAF拦截（通常403或405，或者特定内容）
           // 阿里云ESA/LeiChi有时返回403
           if (e.response?.statusCode == 403) {
+            logger.debug('FlarumApi: 检测到WAF拦截，尝试触发验证');
             // 尝试触发验证
             final requestOptions = e.requestOptions;
             final url = '${requestOptions.baseUrl}${requestOptions.path}';
-            
-            // 锁定Dio，避免并发请求全部失败
-            _dio.lock();
-            
+
             try {
               // 显示验证窗口
               final cookieValue = await VerificationWindow.show(url);
-              
+
               if (cookieValue != null) {
-                // 验证成功，添加Cookie
-                final cookie = Cookie('acw_sc__v2', cookieValue)
-                  ..domain = Uri.parse(_baseUrl!).host
-                  ..path = '/';
-                
+                logger.debug('FlarumApi: WAF验证成功，添加Cookie');
                 // 验证成功，添加Cookie到CookieJar
                 final uri = Uri.parse(_baseUrl!);
                 final cookie = Cookie('acw_sc__v2', cookieValue)
                   ..domain = uri.host
                   ..path = '/'
                   ..httpOnly = true;
-                
+
                 await _cookieJar.saveFromResponse(uri, [cookie]);
-                
-                _dio.unlock();
-                
+
                 // 重试请求
+                logger.debug('FlarumApi: WAF验证成功，重试请求');
                 final response = await _dio.fetch(requestOptions);
                 return handler.resolve(response);
+              } else {
+                logger.warning('FlarumApi: WAF验证失败或取消');
               }
-            } catch (_) {
+            } catch (e) {
+              logger.error('FlarumApi: WAF验证过程中发生错误', e);
               // 验证失败或取消
-            } finally {
-              _dio.unlock();
             }
           }
           return handler.next(e);
         },
       ),
     );
+
+    logger.info('FlarumApi: Dio客户端初始化完成');
   }
 
   /// 设置API基础URL
@@ -166,6 +192,7 @@ class FlarumApi {
   /// 参数：
   /// - url: 新的基础URL
   void setBaseUrl(String url) {
+    logger.info('FlarumApi: 设置基础URL - $url');
     _baseUrl = url;
     _dio.options.baseUrl = url;
     _dio.options.headers['Referer'] = url;
@@ -177,11 +204,13 @@ class FlarumApi {
   /// 参数：
   /// - token: 新的认证令牌
   void setToken(String token) {
+    logger.info('FlarumApi: 设置认证令牌');
     _token = token;
   }
 
   /// 清除当前认证令牌
   void clearToken() {
+    logger.info('FlarumApi: 清除认证令牌');
     _token = null;
   }
 
@@ -201,6 +230,7 @@ class FlarumApi {
   /// 2. 将该端点设置为当前端点
   /// 3. 更新Dio客户端的基础URL
   Future<void> saveEndpoint(String url) async {
+    logger.info('FlarumApi: 保存端点 - $url');
     final prefs = await SharedPreferences.getInstance();
 
     // 获取当前端点列表
@@ -208,6 +238,7 @@ class FlarumApi {
 
     // 如果端点不存在，则添加到列表
     if (!endpoints.contains(url)) {
+      logger.debug('FlarumApi: 端点不存在，添加到列表');
       endpoints.add(url);
       await prefs.setStringList(Constants.endpointsKey, endpoints);
     }
@@ -215,6 +246,7 @@ class FlarumApi {
     // 设置为当前端点
     await prefs.setString(Constants.currentEndpointKey, url);
     setBaseUrl(url);
+    logger.info('FlarumApi: 端点保存完成 - $url');
   }
 
   /// 从本地存储加载端点配置
@@ -224,16 +256,20 @@ class FlarumApi {
   /// 2. 如果存在当前端点，使用该端点并加载对应的认证令牌
   /// 3. 如果不存在，使用默认端点
   Future<void> loadEndpoint() async {
+    logger.info('FlarumApi: 加载端点配置');
     final prefs = await SharedPreferences.getInstance();
     final currentEndpoint = prefs.getString(Constants.currentEndpointKey);
     if (currentEndpoint != null) {
+      logger.info('FlarumApi: 加载当前端点 - $currentEndpoint');
       setBaseUrl(currentEndpoint);
       // 加载当前端点的认证令牌
       await loadToken(currentEndpoint);
     } else {
       // 如果没有当前端点，则使用默认端点
+      logger.info('FlarumApi: 没有当前端点，使用默认端点 - $_baseUrl');
       setBaseUrl(_baseUrl!);
     }
+    logger.info('FlarumApi: 端点配置加载完成');
   }
 
   /// 获取所有保存的端点列表
@@ -241,8 +277,11 @@ class FlarumApi {
   /// 返回值：
   /// - `Future<List<String>>`: 包含所有保存端点URL的列表
   Future<List<String>> getEndpoints() async {
+    logger.debug('FlarumApi: 获取所有保存的端点');
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(Constants.endpointsKey) ?? [];
+    final endpoints = prefs.getStringList(Constants.endpointsKey) ?? [];
+    logger.debug('FlarumApi: 找到 ${endpoints.length} 个端点');
+    return endpoints;
   }
 
   /// 切换到指定端点
@@ -255,10 +294,12 @@ class FlarumApi {
   /// 2. 切换到新端点
   /// 3. 加载新端点的认证令牌
   Future<void> switchEndpoint(String url) async {
+    logger.info('FlarumApi: 切换到端点 - $url');
     final prefs = await SharedPreferences.getInstance();
 
     // 保存当前端点的令牌
     if (_baseUrl != null && _token != null) {
+      logger.debug('FlarumApi: 保存当前端点的令牌 - $_baseUrl');
       await saveToken(_baseUrl!, _token!);
     }
 
@@ -267,7 +308,9 @@ class FlarumApi {
     setBaseUrl(url);
 
     // 加载新端点的令牌
+    logger.debug('FlarumApi: 加载新端点的令牌 - $url');
     await loadToken(url);
+    logger.info('FlarumApi: 端点切换完成 - $url');
   }
 
   /// 删除指定端点

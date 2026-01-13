@@ -401,9 +401,9 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
         );
       });
 
-      SnackbarUtils.showMaterialSnackbar(context, '你的回复已发布');
+      SnackbarUtils.showSnackbar('你的回复已发布');
     } else {
-      SnackbarUtils.showMaterialSnackbar(context, '发布回复失败');
+      SnackbarUtils.showSnackbar('发布回复失败');
     }
   }
 
@@ -482,10 +482,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
 
                 // 确保baseUrl不为空
                 if (baseUrl == null || baseUrl.isEmpty) {
-                  SnackbarUtils.showMaterialSnackbar(
-                    context,
-                    '无法获取API端点，请先设置端点',
-                  );
+                  SnackbarUtils.showSnackbar('无法获取API端点，请先设置端点');
                   return;
                 }
 
@@ -502,10 +499,10 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                         mode: LaunchMode.externalApplication,
                       );
                     } else {
-                      SnackbarUtils.showMaterialSnackbar(context, '无法打开链接');
+                      SnackbarUtils.showSnackbar('无法打开链接');
                     }
                   } catch (e) {
-                    SnackbarUtils.showMaterialSnackbar(context, '无法打开链接');
+                    SnackbarUtils.showSnackbar('无法打开链接');
                   }
                 } else if (value == 'share') {
                   // 分享链接
@@ -517,7 +514,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                       mode: LaunchMode.externalApplication,
                     );
                   } catch (e) {
-                    SnackbarUtils.showMaterialSnackbar(context, '分享失败');
+                    SnackbarUtils.showSnackbar('分享失败');
                   }
                 }
               }
@@ -657,9 +654,7 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                                       iconSize: 20,
                                       onPressed: () {
                                         // 分享
-                                        SnackbarUtils.showDevelopmentInProgress(
-                                          context,
-                                        );
+                                        SnackbarUtils.showDevelopmentInProgress();
                                       },
                                     ),
                                 ],

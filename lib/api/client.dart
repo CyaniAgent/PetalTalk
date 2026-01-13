@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
+import '../core/logger.dart';
+
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
@@ -19,6 +21,8 @@ class ApiClient {
 
   // 初始化Dio
   void _initDio() {
+    logger.info('ApiClient: 初始化Dio客户端，baseUrl: $_baseUrl');
+
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl!,
@@ -50,21 +54,44 @@ class ApiClient {
     final cookieJar = CookieJar();
     _dio.interceptors.add(CookieManager(cookieJar));
 
-    // 添加认证拦截器
+    // 添加请求日志拦截器
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          logger.debug('ApiClient: 发送请求 - ${options.method} ${options.uri}');
+          if (options.data != null) {
+            logger.debug('ApiClient: 请求数据 - ${options.data}');
+          }
           if (_token != null) {
             options.headers['Authorization'] = 'Token $_token';
           }
           return handler.next(options);
         },
+
+        onResponse: (response, handler) {
+          logger.debug(
+            'ApiClient: 收到响应 - ${response.statusCode} ${response.requestOptions.uri}',
+          );
+          return handler.next(response);
+        },
+
+        onError: (DioException e, handler) {
+          logger.error(
+            'ApiClient: 请求错误 - ${e.requestOptions.uri}',
+            e,
+            e.stackTrace,
+          );
+          return handler.next(e);
+        },
       ),
     );
+
+    logger.info('ApiClient: Dio客户端初始化完成');
   }
 
   // 设置基础URL
   void setBaseUrl(String url) {
+    logger.info('ApiClient: 设置基础URL - $url');
     _baseUrl = url;
     _dio.options.baseUrl = url;
     _dio.options.headers['Referer'] = url;
@@ -73,11 +100,13 @@ class ApiClient {
 
   // 设置认证令牌
   void setToken(String token) {
+    logger.info('ApiClient: 设置认证令牌');
     _token = token;
   }
 
   // 清除认证令牌
   void clearToken() {
+    logger.info('ApiClient: 清除认证令牌');
     _token = null;
   }
 
@@ -90,6 +119,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    logger.debug('ApiClient: 发起GET请求 - $path');
     return await _dio.get(
       path,
       queryParameters: queryParameters,
@@ -104,6 +134,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    logger.debug('ApiClient: 发起POST请求 - $path');
     return await _dio.post(
       path,
       data: data,
@@ -119,6 +150,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    logger.debug('ApiClient: 发起PUT请求 - $path');
     return await _dio.put(
       path,
       data: data,
@@ -133,6 +165,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    logger.debug('ApiClient: 发起DELETE请求 - $path');
     return await _dio.delete(
       path,
       queryParameters: queryParameters,
@@ -147,6 +180,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    logger.debug('ApiClient: 发起PATCH请求 - $path');
     return await _dio.patch(
       path,
       data: data,

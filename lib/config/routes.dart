@@ -11,6 +11,7 @@ import '../ui/pages/setting_page.dart';
 import '../ui/pages/endpoint_selection_page.dart';
 import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
+import '../ui/pages/log_viewer_page.dart';
 
 class AppRoutes {
   /// 初始路由
@@ -42,17 +43,14 @@ class AppRoutes {
 
   /// 通知页
   static const String notifications = '/notifications';
+
+  /// 日志查看页
+  static const String logs = '/logs';
 }
 
 /// 路由配置列表
 final List<GetPage> appRoutes = [
-  GetPage(
-    name: AppRoutes.login,
-    page: () => const LoginPage(),
-    binding: BindingsBuilder(() {
-      Get.put(LoginController());
-    }),
-  ),
+  GetPage(name: AppRoutes.login, page: () => const LoginPage()),
   GetPage(name: AppRoutes.home, page: () => const HomePage()),
   GetPage(
     name: AppRoutes.discussionDetail,
@@ -66,4 +64,5 @@ final List<GetPage> appRoutes = [
   GetPage(name: AppRoutes.settings, page: () => const SettingPage()),
   GetPage(name: AppRoutes.endpoint, page: () => const EndpointSelectionPage()),
   GetPage(name: AppRoutes.notifications, page: () => const NotificationList()),
+  GetPage(name: AppRoutes.logs, page: () => const LogViewerPage()),
 ];

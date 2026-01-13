@@ -45,36 +45,24 @@ class DiscussionService {
       if (response.statusCode == 200) {
         final newData = response.data;
 
-        // 尝试获取当前缓存数据
-        Map<String, dynamic>? cachedData;
+        // 尝试获取当前缓存数据并更新
         try {
-          cachedData = await _cacheService.getCache<Map<String, dynamic>>(
+          final cachedData = await _cacheService.getCache<Map<String, dynamic>>(
             cacheKey,
           );
+          // 比较数据是否一致，不一致则更新缓存
+          if (cachedData == null ||
+              _areDiscussionsDifferent(cachedData, newData)) {
+            await _cacheService.setCache(key: cacheKey, data: newData);
+          }
         } catch (cacheError) {
-          // 缓存读取失败，记录错误但继续执行
+          // 缓存操作失败，记录错误但继续执行
           final cacheDetailedError = ErrorHandler.createDetailedError(
             cacheError,
-            errorMessage: '获取主题帖缓存失败',
+            errorMessage: '主题帖缓存操作失败',
             context: {'cacheKey': cacheKey, 'offset': offset, 'limit': limit},
           );
-          logger.error('获取主题帖缓存失败: $cacheDetailedError', cacheError);
-        }
-
-        // 比较数据是否一致，不一致则更新缓存
-        if (cachedData == null ||
-            _areDiscussionsDifferent(cachedData, newData)) {
-          try {
-            await _cacheService.setCache(key: cacheKey, data: newData);
-          } catch (cacheError) {
-            // 缓存写入失败，记录错误但继续执行
-            final cacheDetailedError = ErrorHandler.createDetailedError(
-              cacheError,
-              errorMessage: '更新主题帖缓存失败',
-              context: {'cacheKey': cacheKey, 'offset': offset, 'limit': limit},
-            );
-            logger.error('更新主题帖缓存失败: $cacheDetailedError', cacheError);
-          }
+          logger.error('主题帖缓存操作失败: $cacheDetailedError', cacheError);
         }
 
         return newData;
@@ -182,36 +170,24 @@ class DiscussionService {
       if (response.statusCode == 200) {
         final newData = response.data;
 
-        // 尝试获取当前缓存数据
-        Map<String, dynamic>? cachedData;
+        // 尝试获取当前缓存数据并更新
         try {
-          cachedData = await _cacheService.getCache<Map<String, dynamic>>(
+          final cachedData = await _cacheService.getCache<Map<String, dynamic>>(
             cacheKey,
           );
+          // 比较数据是否一致，不一致则更新缓存
+          if (cachedData == null ||
+              _areDiscussionDetailsDifferent(cachedData, newData)) {
+            await _cacheService.setCache(key: cacheKey, data: newData);
+          }
         } catch (cacheError) {
-          // 缓存读取失败，记录错误但继续执行
+          // 缓存操作失败，记录错误但继续执行
           final cacheDetailedError = ErrorHandler.createDetailedError(
             cacheError,
-            errorMessage: '获取主题帖详情缓存失败',
+            errorMessage: '主题帖详情缓存操作失败',
             context: {'cacheKey': cacheKey, 'discussionId': id},
           );
-          logger.error('获取主题帖详情缓存失败: $cacheDetailedError', cacheError);
-        }
-
-        // 比较数据是否一致，不一致则更新缓存
-        if (cachedData == null ||
-            _areDiscussionDetailsDifferent(cachedData, newData)) {
-          try {
-            await _cacheService.setCache(key: cacheKey, data: newData);
-          } catch (cacheError) {
-            // 缓存写入失败，记录错误但继续执行
-            final cacheDetailedError = ErrorHandler.createDetailedError(
-              cacheError,
-              errorMessage: '更新主题帖详情缓存失败',
-              context: {'cacheKey': cacheKey, 'discussionId': id},
-            );
-            logger.error('更新主题帖详情缓存失败: $cacheDetailedError', cacheError);
-          }
+          logger.error('主题帖详情缓存操作失败: $cacheDetailedError', cacheError);
         }
 
         return newData;

@@ -172,6 +172,7 @@ class PostService {
   /// 返回值：
   /// - `Future<Map<String, dynamic>?>`: 包含帖子详情的响应数据，失败返回null
   Future<Map<String, dynamic>?> getPost(String id) async {
+    logger.info('获取单个帖子详情，帖子ID: $id');
     // 生成缓存键
     final cacheKey = 'cache_post_$id';
 
@@ -180,6 +181,7 @@ class PostService {
 
       if (response.statusCode == 200) {
         final newData = response.data;
+        logger.debug('获取帖子详情成功，帖子ID: $id');
 
         // 获取当前缓存数据
         final cachedData = await _cacheService.getCache<Map<String, dynamic>>(
@@ -189,15 +191,24 @@ class PostService {
         // 比较数据是否一致，不一致则更新缓存
         if (cachedData == null ||
             _arePostDetailsDifferent(cachedData, newData)) {
+          logger.debug('更新帖子详情缓存，帖子ID: $id');
           await _cacheService.setCache(key: cacheKey, data: newData);
         }
 
         return newData;
       }
+      logger.warning('获取帖子详情失败，帖子ID: $id，状态码: ${response.statusCode}');
       return null;
     } catch (e) {
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '获取帖子详情发生异常',
+        context: {'postId': id},
+      );
+      logger.error('获取帖子详情发生异常: $detailedError', e);
       ErrorHandler.handleError(e, 'Get post');
       // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      logger.debug('尝试使用缓存获取帖子详情，缓存键: $cacheKey');
       return await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
     }
   }
@@ -251,6 +262,7 @@ class PostService {
     int offset = 0,
     int limit = 20,
   }) async {
+    logger.info('获取主题帖的帖子列表，主题帖ID: $discussionId，偏移量: $offset，每页数量: $limit');
     // 生成缓存键
     final cacheKey =
         'cache_posts_for_discussion_${discussionId}_${offset}_$limit';
@@ -267,6 +279,7 @@ class PostService {
 
       if (response.statusCode == 200) {
         final newData = response.data;
+        logger.debug('获取主题帖帖子列表成功，主题帖ID: $discussionId');
 
         // 获取当前缓存数据
         final cachedData = await _cacheService.getCache<Map<String, dynamic>>(
@@ -275,15 +288,30 @@ class PostService {
 
         // 比较数据是否一致，不一致则更新缓存
         if (cachedData == null || _arePostsDifferent(cachedData, newData)) {
+          logger.debug('更新主题帖帖子列表缓存，主题帖ID: $discussionId');
           await _cacheService.setCache(key: cacheKey, data: newData);
         }
 
         return newData;
       }
+      logger.warning(
+        '获取主题帖帖子列表失败，主题帖ID: $discussionId，状态码: ${response.statusCode}',
+      );
       return null;
     } catch (e) {
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '获取主题帖帖子列表发生异常',
+        context: {
+          'discussionId': discussionId,
+          'offset': offset,
+          'limit': limit,
+        },
+      );
+      logger.error('获取主题帖帖子列表发生异常: $detailedError', e);
       ErrorHandler.handleError(e, 'Get posts for discussion');
       // 如果网络请求失败，使用缓存数据（包括过期缓存）
+      logger.debug('尝试使用缓存获取主题帖帖子列表，缓存键: $cacheKey');
       return await _cacheService.getCache<Map<String, dynamic>>(cacheKey);
     }
   }
@@ -300,6 +328,7 @@ class PostService {
     required String discussionId,
     required String content,
   }) async {
+    logger.info('回复主题帖，主题帖ID: $discussionId');
     try {
       final response = await _api.post(
         '/api/posts',
@@ -317,10 +346,20 @@ class PostService {
       );
 
       if (response.statusCode == 201) {
+        logger.debug('回复主题帖成功，主题帖ID: $discussionId');
         return response.data;
       }
+      logger.warning(
+        '回复主题帖失败，主题帖ID: $discussionId，状态码: ${response.statusCode}',
+      );
       return null;
     } catch (e) {
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '回复主题帖发生异常',
+        context: {'discussionId': discussionId},
+      );
+      logger.error('回复主题帖发生异常: $detailedError', e);
       ErrorHandler.handleError(e, 'Reply to discussion');
       return null;
     }
@@ -338,6 +377,7 @@ class PostService {
     required String id,
     required String content,
   }) async {
+    logger.info('更新帖子，帖子ID: $id');
     try {
       final response = await _api.patch(
         '/api/posts/$id',
@@ -351,10 +391,18 @@ class PostService {
       );
 
       if (response.statusCode == 200) {
+        logger.debug('更新帖子成功，帖子ID: $id');
         return response.data;
       }
+      logger.warning('更新帖子失败，帖子ID: $id，状态码: ${response.statusCode}');
       return null;
     } catch (e) {
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '更新帖子发生异常',
+        context: {'postId': id},
+      );
+      logger.error('更新帖子发生异常: $detailedError', e);
       ErrorHandler.handleError(e, 'Update post');
       return null;
     }

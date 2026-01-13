@@ -55,19 +55,7 @@ class AuthService {
 
         // 如果需要记住登录状态，保存到本地存储
         if (remember && _api.baseUrl != null) {
-          try {
-            await _api.saveToken(_api.baseUrl!, token);
-            // 保存用户ID，使用端点特定的键
-            await _saveUserId(_api.baseUrl!, userId);
-          } catch (storageError) {
-            // 本地存储失败，记录错误但不影响登录流程
-            final storageDetailedError = ErrorHandler.createDetailedError(
-              storageError,
-              errorMessage: '保存登录信息失败',
-              context: {'operation': 'login', 'remember': remember, 'userId': userId},
-            );
-            logger.error('保存登录信息失败: $storageDetailedError', storageError);
-          }
+          await _saveLoginInfo(_api.baseUrl!, token, userId);
         }
 
         return {'token': token, 'userId': userId};
@@ -80,7 +68,7 @@ class AuthService {
         errorMessage: '登录失败',
         context: {'operation': 'login', 'identification': identification},
       );
-      
+
       logger.error('登录失败: $detailedError', e);
       ErrorHandler.handleError(e, 'Login');
 
@@ -95,18 +83,7 @@ class AuthService {
 
           // 如果需要记住登录状态，保存到本地存储
           if (remember && _api.baseUrl != null && userId != null) {
-            try {
-              await _api.saveToken(_api.baseUrl!, token);
-              await _saveUserId(_api.baseUrl!, userId);
-            } catch (storageError) {
-              // 本地存储失败，记录错误但不影响登录流程
-              final storageDetailedError = ErrorHandler.createDetailedError(
-                storageError,
-                errorMessage: '保存登录信息失败',
-                context: {'operation': 'login', 'remember': remember, 'userId': userId},
-              );
-              logger.error('保存登录信息失败: $storageDetailedError', storageError);
-            }
+            await _saveLoginInfo(_api.baseUrl!, token, userId);
           }
         }
 
@@ -121,10 +98,41 @@ class AuthService {
         errorMessage: '登录发生未知错误',
         context: {'operation': 'login', 'identification': identification},
       );
-      
+
       logger.error('登录发生未知错误: $detailedError', e);
       ErrorHandler.handleError(e, 'Login');
       return null;
+    }
+  }
+
+  /// 保存登录信息到本地存储
+  ///
+  /// 参数：
+  /// - endpoint: 当前端点URL
+  /// - token: 用户令牌
+  /// - userId: 用户ID
+  ///
+  /// 返回值：
+  /// - `Future<void>`
+  Future<void> _saveLoginInfo(
+    String endpoint,
+    String token,
+    dynamic userId,
+  ) async {
+    try {
+      // 保存令牌
+      await _api.saveToken(endpoint, token);
+
+      // 保存用户ID，使用端点特定的键
+      await _saveUserId(endpoint, userId);
+    } catch (storageError) {
+      // 本地存储失败，记录错误但不影响登录流程
+      final storageDetailedError = ErrorHandler.createDetailedError(
+        storageError,
+        errorMessage: '保存登录信息失败',
+        context: {'operation': 'saveLoginInfo', 'userId': userId},
+      );
+      logger.error('保存登录信息失败: $storageDetailedError', storageError);
     }
   }
 

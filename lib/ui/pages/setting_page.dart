@@ -6,6 +6,7 @@ import '../../utils/snackbar_utils.dart';
 import '../components/setting/setting_panel.dart';
 import '../../api/services/auth_service.dart';
 import '../../api/flarum_api.dart';
+import '../../core/logger.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -15,6 +16,7 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
+  final AppLogger _logger = AppLogger();
   final AppearanceService _appearanceService = AppearanceService();
   final FlarumApi _api = FlarumApi();
   bool _isDarkMode = false;
@@ -22,76 +24,398 @@ class _SettingPageState extends State<SettingPage> {
   @override
   void initState() {
     super.initState();
+    _logger.info('SettingPage初始化');
     // 加载当前设置
     _loadCurrentSettings();
+  }
+
+  @override
+  void dispose() {
+    _logger.info('SettingPage销毁');
+    super.dispose();
   }
 
   // 更多设置状态
   bool _useDynamicColor = true;
   String _accentColor = 'blue';
-  double _fontSize = 16.0;
+
+  // 通知设置状态
+  bool _enableNotifications = true;
+  bool _enableMessageNotifications = true;
+  bool _enableMentionNotifications = true;
+  bool _enableReplyNotifications = true;
+  bool _enableSystemNotifications = true;
+
+  // 日志设置状态
+  String _logLevel = 'error';
+  int _maxLogSize = 10;
+  bool _enableLogExport = true;
 
   // 加载当前设置
   Future<void> _loadCurrentSettings() async {
-    final themeMode = await _appearanceService.loadThemeMode();
-    final useDynamicColor = await _appearanceService.loadUseDynamicColor();
-    final accentColor = await _appearanceService.loadAccentColor();
-    final fontSize = await _appearanceService.loadFontSize();
+    _logger.debug('开始加载当前设置');
+    try {
+      // 并行加载所有设置，提高性能
+      final settings = await Future.wait([
+        _appearanceService.loadThemeMode(),
+        _appearanceService.loadUseDynamicColor(),
+        _appearanceService.loadAccentColor(),
+        _appearanceService.loadEnableNotifications(),
+        _appearanceService.loadEnableMessageNotifications(),
+        _appearanceService.loadEnableMentionNotifications(),
+        _appearanceService.loadEnableReplyNotifications(),
+        _appearanceService.loadEnableSystemNotifications(),
+        _appearanceService.loadLogLevel(),
+        _appearanceService.loadMaxLogSize(),
+        _appearanceService.loadEnableLogExport(),
+      ]);
 
-    setState(() {
-      _isDarkMode = themeMode != ThemeMode.light;
-      _useDynamicColor = useDynamicColor;
-      _accentColor = accentColor;
-      _fontSize = fontSize;
-    });
+      setState(() {
+        _isDarkMode = settings[0] != ThemeMode.light;
+        _useDynamicColor = settings[1] as bool;
+        _accentColor = settings[2] as String;
+        _enableNotifications = settings[3] as bool;
+        _enableMessageNotifications = settings[4] as bool;
+        _enableMentionNotifications = settings[5] as bool;
+        _enableReplyNotifications = settings[6] as bool;
+        _enableSystemNotifications = settings[7] as bool;
+        _logLevel = settings[8] as String;
+        _maxLogSize = settings[9] as int;
+        _enableLogExport = settings[10] as bool;
+      });
+      _logger.info(
+        '当前设置加载完成: 深色模式 = $_isDarkMode, 动态色彩 = $_useDynamicColor, 强调色 = $_accentColor, 通知启用 = $_enableNotifications',
+      );
+    } catch (e, stackTrace) {
+      _logger.error('加载当前设置出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('加载设置失败', type: SnackbarType.error);
+    }
   }
 
   // 切换深色模式
   Future<void> _toggleDarkMode(bool value) async {
-    final themeMode = value ? ThemeMode.dark : ThemeMode.light;
-    await _appearanceService.saveThemeMode(themeMode);
-    setState(() {
-      _isDarkMode = value;
-    });
-    Get.changeThemeMode(themeMode);
+    _logger.debug('切换深色模式: $value');
+    try {
+      final themeMode = value ? ThemeMode.dark : ThemeMode.light;
+      await _appearanceService.saveThemeMode(themeMode);
+      setState(() {
+        _isDarkMode = value;
+      });
+      Get.changeThemeMode(themeMode);
+      _logger.info('深色模式切换成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换深色模式出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换深色模式失败', type: SnackbarType.error);
+    }
   }
 
   // 切换动态色彩
   Future<void> _toggleDynamicColor(bool value) async {
-    await _appearanceService.saveUseDynamicColor(value);
-    setState(() {
-      _useDynamicColor = value;
-    });
-    // 重新加载主题设置
-    _loadThemeSettings();
+    _logger.debug('切换动态色彩: $value');
+    try {
+      await _appearanceService.saveUseDynamicColor(value);
+      setState(() {
+        _useDynamicColor = value;
+      });
+      _logger.info('动态色彩切换成功: $value');
+
+      // 显示重启确认对话框
+      if (mounted) {
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('主题设置已更改'),
+              content: const Text('您需要重启应用才能使新的主题设置生效。'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Get.back(result: false);
+                  },
+                  child: const Text('稍后重启'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Get.back(result: true);
+                  },
+                  child: const Text('立即重启'),
+                ),
+              ],
+            );
+          },
+        ).then((value) {
+          if (value == true && mounted) {
+            // 立即重启应用
+            _logger.debug('用户选择立即重启应用');
+            _loadThemeSettings();
+          } else {
+            _logger.debug('用户选择稍后重启应用');
+          }
+        });
+      }
+    } catch (e, stackTrace) {
+      _logger.error('切换动态色彩出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换动态色彩失败', type: SnackbarType.error);
+    }
   }
 
   // 更新强调色
   Future<void> _updateAccentColor(String value) async {
-    await _appearanceService.saveAccentColor(value);
-    setState(() {
-      _accentColor = value;
-    });
-    // 重新加载主题设置
-    _loadThemeSettings();
+    _logger.debug('更新强调色: $value');
+    try {
+      await _appearanceService.saveAccentColor(value);
+      setState(() {
+        _accentColor = value;
+      });
+      // 重新加载主题设置
+      _loadThemeSettings();
+      _logger.info('强调色更新成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('更新强调色出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('更新强调色失败', type: SnackbarType.error);
+    }
   }
 
-  // 更新字体大小
-  Future<void> _updateFontSize(double value) async {
-    await _appearanceService.saveFontSize(value);
-    setState(() {
-      _fontSize = value;
-    });
+  // 切换是否启用所有通知
+  Future<void> _toggleEnableNotifications(bool value) async {
+    _logger.debug('切换启用所有通知: $value');
+    try {
+      await _appearanceService.saveEnableNotifications(value);
+      setState(() {
+        _enableNotifications = value;
+        // 如果禁用所有通知，同时禁用所有子类型通知
+        if (!value) {
+          _enableMessageNotifications = false;
+          _enableMentionNotifications = false;
+          _enableReplyNotifications = false;
+          _enableSystemNotifications = false;
+          // 保存子类型通知设置
+          _appearanceService.saveEnableMessageNotifications(false);
+          _appearanceService.saveEnableMentionNotifications(false);
+          _appearanceService.saveEnableReplyNotifications(false);
+          _appearanceService.saveEnableSystemNotifications(false);
+        }
+      });
+      _logger.info('启用所有通知设置成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换启用所有通知出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换通知设置失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换是否启用消息通知
+  Future<void> _toggleMessageNotifications(bool value) async {
+    _logger.debug('切换消息通知: $value');
+    try {
+      await _appearanceService.saveEnableMessageNotifications(value);
+      setState(() {
+        _enableMessageNotifications = value;
+        // 如果启用了某个子类型通知，同时启用所有通知
+        if (value && !_enableNotifications) {
+          _enableNotifications = true;
+          _appearanceService.saveEnableNotifications(true);
+        }
+      });
+      _logger.info('消息通知设置成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换消息通知出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换消息通知失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换是否启用提及通知
+  Future<void> _toggleMentionNotifications(bool value) async {
+    _logger.debug('切换提及通知: $value');
+    try {
+      await _appearanceService.saveEnableMentionNotifications(value);
+      setState(() {
+        _enableMentionNotifications = value;
+        // 如果启用了某个子类型通知，同时启用所有通知
+        if (value && !_enableNotifications) {
+          _enableNotifications = true;
+          _appearanceService.saveEnableNotifications(true);
+        }
+      });
+      _logger.info('提及通知设置成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换提及通知出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换提及通知失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换是否启用回复通知
+  Future<void> _toggleReplyNotifications(bool value) async {
+    _logger.debug('切换回复通知: $value');
+    try {
+      await _appearanceService.saveEnableReplyNotifications(value);
+      setState(() {
+        _enableReplyNotifications = value;
+        // 如果启用了某个子类型通知，同时启用所有通知
+        if (value && !_enableNotifications) {
+          _enableNotifications = true;
+          _appearanceService.saveEnableNotifications(true);
+        }
+      });
+      _logger.info('回复通知设置成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换回复通知出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换回复通知失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换是否启用系统通知
+  Future<void> _toggleSystemNotifications(bool value) async {
+    _logger.debug('切换系统通知: $value');
+    try {
+      await _appearanceService.saveEnableSystemNotifications(value);
+      setState(() {
+        _enableSystemNotifications = value;
+        // 如果启用了某个子类型通知，同时启用所有通知
+        if (value && !_enableNotifications) {
+          _enableNotifications = true;
+          _appearanceService.saveEnableNotifications(true);
+        }
+      });
+      _logger.info('系统通知设置成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('切换系统通知出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换系统通知失败', type: SnackbarType.error);
+    }
   }
 
   // 重新加载主题设置并重启应用
   Future<void> _loadThemeSettings() async {
-    // 重新加载主题设置
-    final themeMode = await _appearanceService.loadThemeMode();
-    // 这里可以添加重启应用的逻辑，或者通过GetX刷新当前页面
-    Get.changeThemeMode(themeMode);
-    // 通知应用主题已更改
-    Get.forceAppUpdate();
+    _logger.debug('重新加载主题设置');
+    try {
+      // 重新加载主题设置
+      final themeMode = await _appearanceService.loadThemeMode();
+      // 这里可以添加重启应用的逻辑，或者通过GetX刷新当前页面
+      Get.changeThemeMode(themeMode);
+      // 通知应用主题已更改
+      Get.forceAppUpdate();
+      _logger.info('主题设置重新加载成功');
+    } catch (e, stackTrace) {
+      _logger.error('重新加载主题设置出错', e, stackTrace);
+    }
+  }
+
+  // 更新日志级别
+  Future<void> _updateLogLevel(String value) async {
+    _logger.debug('更新日志级别: $value');
+    try {
+      await _appearanceService.saveLogLevel(value);
+      _logger.setLogLevel(value);
+      setState(() {
+        _logLevel = value;
+      });
+      _logger.info('日志级别更新成功: $value');
+      SnackbarUtils.showSnackbar('日志级别已更新');
+    } catch (e, stackTrace) {
+      _logger.error('更新日志级别出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('更新日志级别失败', type: SnackbarType.error);
+    }
+  }
+
+  // 更新最大日志大小
+  Future<void> _updateMaxLogSize(int value) async {
+    _logger.debug('更新最大日志大小: $value MB');
+    try {
+      await _appearanceService.saveMaxLogSize(value);
+      await _logger.setMaxLogSize(value);
+      setState(() {
+        _maxLogSize = value;
+      });
+      _logger.info('最大日志大小更新成功: $value MB');
+      SnackbarUtils.showSnackbar('最大日志大小已更新');
+    } catch (e, stackTrace) {
+      _logger.error('更新最大日志大小出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('更新最大日志大小失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换日志导出
+  Future<void> _toggleLogExport(bool value) async {
+    _logger.debug('切换日志导出: $value');
+    try {
+      await _appearanceService.saveEnableLogExport(value);
+      setState(() {
+        _enableLogExport = value;
+      });
+      _logger.info('日志导出设置成功: $value');
+      SnackbarUtils.showSnackbar('日志导出设置已更新');
+    } catch (e, stackTrace) {
+      _logger.error('切换日志导出出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换日志导出失败', type: SnackbarType.error);
+    }
+  }
+
+  // 查看日志
+  void _viewLogs() {
+    _logger.debug('查看日志');
+    try {
+      Get.toNamed('/logs');
+      _logger.info('跳转到日志查看页面');
+    } catch (e, stackTrace) {
+      _logger.error('查看日志出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('查看日志失败', type: SnackbarType.error);
+    }
+  }
+
+  // 导出日志
+  Future<void> _exportLogs() async {
+    _logger.debug('导出日志');
+    try {
+      final file = await _logger.exportLogs();
+      if (file != null) {
+        _logger.info('日志导出成功: ${file.path}');
+        SnackbarUtils.showSnackbar('日志已导出到: ${file.path}');
+      } else {
+        _logger.warning('日志导出失败: 文件为null');
+        SnackbarUtils.showSnackbar('日志导出失败', type: SnackbarType.error);
+      }
+    } catch (e, stackTrace) {
+      _logger.error('导出日志出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('日志导出失败', type: SnackbarType.error);
+    }
+  }
+
+  // 删除日志
+  Future<void> _deleteLogs() async {
+    _logger.debug('删除日志');
+    try {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('确认删除日志'),
+            content: const Text('确定要删除所有日志吗？此操作不可恢复。'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Get.back(result: false);
+                },
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Get.back(result: true);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('删除'),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirm == true) {
+        await _logger.deleteLogs();
+        _logger.info('日志删除成功');
+        SnackbarUtils.showSnackbar('日志已删除');
+      }
+    } catch (e, stackTrace) {
+      _logger.error('删除日志出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('删除日志失败', type: SnackbarType.error);
+    }
   }
 
   // 根据字符串获取强调色
@@ -130,6 +454,7 @@ class _SettingPageState extends State<SettingPage> {
 
   // 显示强调色选择对话框
   void _showAccentColorDialog() {
+    _logger.debug('显示强调色选择对话框');
     showDialog(
       context: context,
       builder: (context) {
@@ -205,7 +530,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('编辑您的个人信息'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
@@ -213,7 +538,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('修改您的登录密码'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
@@ -221,7 +546,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('绑定或修改邮箱地址'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
           ],
@@ -234,36 +559,43 @@ class _SettingPageState extends State<SettingPage> {
           padding: const EdgeInsets.all(16),
           children: [
             SwitchListTile(
+              title: const Text('启用通知'),
+              subtitle: const Text('接收所有类型的通知'),
+              value: _enableNotifications,
+              onChanged: _toggleEnableNotifications,
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
               title: const Text('消息通知'),
               subtitle: const Text('接收新消息通知'),
-              value: true,
-              onChanged: (value) {
-                // TODO: 更新消息通知设置
-              },
+              value: _enableMessageNotifications,
+              onChanged: _enableNotifications
+                  ? _toggleMessageNotifications
+                  : null,
             ),
             SwitchListTile(
               title: const Text('提及通知'),
               subtitle: const Text('当有人@你时通知'),
-              value: true,
-              onChanged: (value) {
-                // TODO: 更新提及通知设置
-              },
+              value: _enableMentionNotifications,
+              onChanged: _enableNotifications
+                  ? _toggleMentionNotifications
+                  : null,
             ),
             SwitchListTile(
               title: const Text('回复通知'),
               subtitle: const Text('当有人回复你时通知'),
-              value: true,
-              onChanged: (value) {
-                // TODO: 更新回复通知设置
-              },
+              value: _enableReplyNotifications,
+              onChanged: _enableNotifications
+                  ? _toggleReplyNotifications
+                  : null,
             ),
             SwitchListTile(
               title: const Text('系统通知'),
               subtitle: const Text('接收系统通知'),
-              value: true,
-              onChanged: (value) {
-                // TODO: 更新系统通知设置
-              },
+              value: _enableSystemNotifications,
+              onChanged: _enableNotifications
+                  ? _toggleSystemNotifications
+                  : null,
             ),
           ],
         ),
@@ -298,22 +630,8 @@ class _SettingPageState extends State<SettingPage> {
                   border: Border.all(color: Colors.grey.shade300),
                 ),
               ),
-              onTap: () => _showAccentColorDialog(),
-            ),
-            ListTile(
-              title: const Text('字体大小'),
-              subtitle: Text('当前大小: ${_fontSize.toStringAsFixed(1)}'),
-              trailing: SizedBox(
-                width: 200,
-                child: Slider(
-                  value: _fontSize,
-                  min: 12.0,
-                  max: 24.0,
-                  divisions: 24,
-                  label: _fontSize.toStringAsFixed(1),
-                  onChanged: _updateFontSize,
-                ),
-              ),
+              onTap: _useDynamicColor ? null : () => _showAccentColorDialog(),
+              enabled: !_useDynamicColor,
             ),
           ],
         ),
@@ -329,7 +647,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('简体中文'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
@@ -337,7 +655,7 @@ class _SettingPageState extends State<SettingPage> {
               subtitle: const Text('中国'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
           ],
@@ -353,21 +671,21 @@ class _SettingPageState extends State<SettingPage> {
               title: const Text('常见问题'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
               title: const Text('使用教程'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
               title: const Text('反馈问题'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                SnackbarUtils.showDevelopmentInProgress(context);
+                SnackbarUtils.showDevelopmentInProgress();
               },
             ),
             ListTile(
@@ -450,12 +768,7 @@ class _SettingPageState extends State<SettingPage> {
                                     await _api.switchEndpoint(endpoint);
                                     // 重新加载当前端点信息
                                     setState(() {});
-                                    if (mounted) {
-                                      SnackbarUtils.showMaterialSnackbar(
-                                        context,
-                                        '已切换到新端点',
-                                      );
-                                    }
+                                    SnackbarUtils.showSnackbar('已切换到新端点');
                                   },
                                   icon: const Icon(Icons.swap_horiz),
                                   label: const Text('切换'),
@@ -496,12 +809,7 @@ class _SettingPageState extends State<SettingPage> {
                                     await _api.deleteEndpoint(endpoint);
                                     // 重新加载端点列表
                                     setState(() {});
-                                    if (mounted) {
-                                      SnackbarUtils.showMaterialSnackbar(
-                                        context,
-                                        '已删除端点',
-                                      );
-                                    }
+                                    SnackbarUtils.showSnackbar('已删除端点');
                                   }
                                 },
                                 icon: const Icon(Icons.delete),
@@ -517,6 +825,156 @@ class _SettingPageState extends State<SettingPage> {
             ],
           );
         },
+      ),
+    });
+
+    // 添加日志设置
+    settingItems.add({
+      'icon': Icons.history,
+      'title': '日志设置',
+      'content': ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // 日志管理操作
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('日志管理', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _viewLogs,
+                        icon: const Icon(Icons.visibility),
+                        label: const Text('查看日志'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportLogs,
+                        icon: const Icon(Icons.download),
+                        label: const Text('导出日志'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _deleteLogs,
+                        icon: const Icon(Icons.delete),
+                        label: const Text('删除日志'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 日志级别设置
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('日志级别', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(
+                    '设置日志记录的详细程度',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  SegmentedButton<String>(
+                    selected: <String>{_logLevel},
+                    onSelectionChanged: (Set<String> newSelection) {
+                      _updateLogLevel(newSelection.first);
+                    },
+                    segments: const <ButtonSegment<String>>[
+                      ButtonSegment<String>(
+                        value: 'error',
+                        label: Text('错误'),
+                        icon: Icon(Icons.error_outline),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'warning',
+                        label: Text('警告'),
+                        icon: Icon(Icons.warning_amber_outlined),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'info',
+                        label: Text('信息'),
+                        icon: Icon(Icons.info_outline),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'debug',
+                        label: Text('调试'),
+                        icon: Icon(Icons.bug_report_outlined),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 最大日志大小设置
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '最大日志大小',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '设置日志文件的最大占用空间 (MB)',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Slider(
+                          value: _maxLogSize.toDouble(),
+                          min: 1,
+                          max: 50,
+                          divisions: 49,
+                          label: '$_maxLogSize MB',
+                          onChanged: (value) {
+                            setState(() {
+                              _maxLogSize = value.toInt();
+                            });
+                          },
+                          onChangeEnd: (value) {
+                            _updateMaxLogSize(value.toInt());
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text('$_maxLogSize MB'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 启用日志导出
+          SwitchListTile(
+            title: const Text('启用日志导出'),
+            subtitle: const Text('允许将日志导出到文件'),
+            value: _enableLogExport,
+            onChanged: _toggleLogExport,
+          ),
+        ],
       ),
     });
 
@@ -581,12 +1039,7 @@ class _SettingPageState extends State<SettingPage> {
                           authService.logout();
                           // 跳转到端点选择页面
                           Get.offAllNamed('/endpoint');
-                          if (mounted) {
-                            SnackbarUtils.showMaterialSnackbar(
-                              context,
-                              '已删除所有数据',
-                            );
-                          }
+                          SnackbarUtils.showSnackbar('已删除所有数据');
                         }
                       },
                       icon: const Icon(Icons.delete_forever),

@@ -1,5 +1,5 @@
 /// 主题帖卡片组件，用于显示单个主题帖的基本信息
-/// 
+///
 /// 该组件显示：
 /// 1. 主题帖标题
 /// 2. 作者信息和发布时间
@@ -15,28 +15,28 @@ import '../../../utils/time_formatter.dart';
 class DiscussionCard extends StatelessWidget {
   /// 主题帖ID
   final String id;
-  
+
   /// 主题帖标题
   final String title;
-  
+
   /// 作者用户名
   final String author;
-  
+
   /// 创建时间（ISO格式）
   final String createdAt;
-  
+
   /// 评论总数
   final int commentCount;
-  
+
   /// 是否置顶
   final bool isSticky;
-  
+
   /// 是否锁定
   final bool isLocked;
-  
+
   /// 标签列表
   final List<String> tags;
-  
+
   /// 点击事件回调
   final VoidCallback onTap;
 

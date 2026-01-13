@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '/api/services/discussion_service.dart';
-import '/utils/snackbar_utils.dart';
+import '../../api/services/discussion_service.dart';
+import '../../utils/snackbar_utils.dart';
+import '../../config/constants.dart';
 
 class CreateDiscussionPage extends StatefulWidget {
   const CreateDiscussionPage({super.key});
@@ -43,13 +44,13 @@ class _CreateDiscussionPageState extends State<CreateDiscussionPage> {
       if (result != null) {
         // 发帖成功，返回首页并刷新
         if (mounted) {
-          SnackbarUtils.showMaterialSnackbar(context, '发帖成功');
+          SnackbarUtils.showSnackbar('发帖成功');
         }
         Get.offAllNamed('/home');
       } else {
         // 发帖失败
         if (mounted) {
-          SnackbarUtils.showMaterialSnackbar(context, '发帖失败');
+          SnackbarUtils.showSnackbar('发帖失败');
         }
       }
     }
@@ -95,8 +96,8 @@ class _CreateDiscussionPageState extends State<CreateDiscussionPage> {
                     if (value == null || value.isEmpty) {
                       return '请输入标题';
                     }
-                    if (value.length < 3) {
-                      return '标题至少需要3个字符';
+                    if (value.length < Constants.titleMinLength) {
+                      return '标题至少需要${Constants.titleMinLength}个字符';
                     }
                     return null;
                   },
@@ -116,8 +117,8 @@ class _CreateDiscussionPageState extends State<CreateDiscussionPage> {
                     if (value == null || value.isEmpty) {
                       return '请输入内容';
                     }
-                    if (value.length < 5) {
-                      return '内容至少需要5个字符';
+                    if (value.length < Constants.contentMinLength) {
+                      return '内容至少需要${Constants.contentMinLength}个字符';
                     }
                     return null;
                   },

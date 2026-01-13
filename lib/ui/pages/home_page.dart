@@ -140,7 +140,7 @@ class _DiscussionListState extends State<DiscussionList>
             icon: const Icon(Icons.search),
             onPressed: () {
               // 搜索功能
-              SnackbarUtils.showDevelopmentInProgress(context);
+              SnackbarUtils.showDevelopmentInProgress();
             },
           ),
           IconButton(
@@ -311,7 +311,7 @@ class _ProfilePage extends GetView {
                     onPressed: () {
                       // 退出登录
                       authService.logout();
-                      SnackbarUtils.showMaterialSnackbar(context, '已退出登录');
+                      SnackbarUtils.showSnackbar('已退出登录');
                       // 刷新页面
                       final mainController = Get.find<UiMainController>();
                       mainController.setSelectedIndex(0);

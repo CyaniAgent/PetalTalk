@@ -7,7 +7,7 @@ class Notification {
   final String fromUserId;
   final String subjectId;
   final String subjectType;
-  
+
   // 关联数据
   final Map<String, dynamic>? fromUser;
   final Map<String, dynamic>? subject;
@@ -25,15 +25,22 @@ class Notification {
     this.subject,
   });
 
-  factory Notification.fromJson(Map<String, dynamic> json, Map<String, Map<String, dynamic>> includedData) {
+  factory Notification.fromJson(
+    Map<String, dynamic> json,
+    Map<String, Map<String, dynamic>> includedData,
+  ) {
     final fromUserId = json['relationships']['fromUser']?['data']?['id'];
     final subjectId = json['relationships']['subject']?['data']?['id'];
     final subjectType = json['relationships']['subject']?['data']?['type'];
-    
+
     // 从included数据中获取用户和主题信息
-    final fromUser = fromUserId != null ? includedData['users_$fromUserId'] : null;
-    final subject = subjectId != null && subjectType != null ? includedData['${subjectType}_$subjectId'] : null;
-    
+    final fromUser = fromUserId != null
+        ? includedData['users_$fromUserId']
+        : null;
+    final subject = subjectId != null && subjectType != null
+        ? includedData['${subjectType}_$subjectId']
+        : null;
+
     return Notification(
       id: json['id'],
       contentType: json['attributes']['contentType'],

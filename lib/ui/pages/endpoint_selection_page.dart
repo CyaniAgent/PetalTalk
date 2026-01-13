@@ -31,14 +31,14 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
     final endpoint = _endpointController.text.trim();
 
     if (endpoint.isEmpty) {
-      SnackbarUtils.showMaterialSnackbar(context, '请输入端点URL');
+      SnackbarUtils.showSnackbar('请输入端点URL');
       return;
     }
 
     // 验证URL格式
     final uri = Uri.tryParse(endpoint);
     if (uri == null || !uri.hasAbsolutePath) {
-      SnackbarUtils.showMaterialSnackbar(context, '请输入有效的URL');
+      SnackbarUtils.showSnackbar('请输入有效的URL');
       return;
     }
 
@@ -56,37 +56,30 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
       final tempDio = Dio();
       // 使用HTTP2适配器提高兼容性
       tempDio.httpClientAdapter = Http2Adapter(
-        ConnectionManager(
-          idleTimeout: const Duration(seconds: 10),
-        ),
+        ConnectionManager(idleTimeout: const Duration(seconds: 10)),
       );
-      
+
       // 发送GET请求检查端点状态
       final response = await tempDio.get(
         '$cleanedUrl/api',
         options: Options(
           followRedirects: false,
           validateStatus: (status) => status != null,
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: {'Accept': 'application/json'},
         ),
       );
-      
+
       // 检查状态码是否为200
       if (response.statusCode != 200) {
         if (mounted) {
-          SnackbarUtils.showMaterialSnackbar(
-            context, 
-            '端点响应异常，状态码：${response.statusCode}',
-          );
+          SnackbarUtils.showSnackbar('端点响应异常，状态码：${response.statusCode}');
           setState(() {
             _isLoading = false;
           });
         }
         return;
       }
-      
+
       // 保存端点到本地存储
       await _api.saveEndpoint(cleanedUrl);
 
@@ -94,10 +87,7 @@ class _EndpointSelectionPageState extends State<EndpointSelectionPage> {
       Get.offAllNamed('/home');
     } catch (e) {
       if (mounted) {
-        SnackbarUtils.showMaterialSnackbar(
-          context, 
-          '无法连接到端点，请检查URL是否正确',
-        );
+        SnackbarUtils.showSnackbar('无法连接到端点，请检查URL是否正确');
       }
     } finally {
       if (mounted) {

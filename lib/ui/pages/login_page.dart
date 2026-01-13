@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:m3e_collection/m3e_collection.dart';
-import 'package:petal_talk/state/main_state.dart';
+import '../../state/main_state.dart';
 
 import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
@@ -47,7 +47,7 @@ class LoginController extends GetxController {
         Get.offAllNamed('/home');
       } else {
         // 登录失败，显示错误信息
-        SnackbarUtils.showMaterialSnackbar(Get.context!, '用户名或密码错误');
+        SnackbarUtils.showSnackbar('用户名或密码错误');
       }
     }
   }
@@ -160,9 +160,7 @@ class LoginPage extends StatelessWidget {
                             TextButton(
                               onPressed: () {
                                 // TODO: 忘记密码
-                                SnackbarUtils.showDevelopmentInProgress(
-                                  context,
-                                );
+                                SnackbarUtils.showDevelopmentInProgress();
                               },
                               child: const Text('忘记密码?'),
                             ),
@@ -210,7 +208,7 @@ class LoginPage extends StatelessWidget {
                         TextButton(
                           onPressed: () {
                             // TODO: 跳转到注册页面
-                            SnackbarUtils.showDevelopmentInProgress(context);
+                            SnackbarUtils.showDevelopmentInProgress();
                           },
                           child: const Text('立即注册'),
                         ),

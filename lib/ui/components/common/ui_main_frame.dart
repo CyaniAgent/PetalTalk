@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../state/main_state.dart';
+import '../../../core/logger.dart';
+import '../../../config/constants.dart';
 
 class UiMainFrame extends StatefulWidget {
   final List<Map<String, dynamic>> navItems;
@@ -18,22 +20,34 @@ class UiMainFrame extends StatefulWidget {
 }
 
 class _UiMainFrameState extends State<UiMainFrame> {
+  final AppLogger _logger = AppLogger();
   late final UiMainController _mainController;
 
   @override
   void initState() {
     super.initState();
+    _logger.info('UiMainFrame初始化');
+    _logger.debug(
+      '导航栏项目数量: ${widget.navItems.length}, 启用渐变背景: ${widget.enableGradientBg}',
+    );
     // 查找或创建控制器，避免重复创建导致状态重置
-    _mainController = Get.isRegistered<UiMainController>()
-        ? Get.find<UiMainController>()
-        : Get.put(UiMainController());
+    if (Get.isRegistered<UiMainController>()) {
+      _logger.debug('找到已注册的UiMainController，复用实例');
+      _mainController = Get.find<UiMainController>();
+    } else {
+      _logger.debug('未找到UiMainController，创建新实例');
+      _mainController = Get.put(UiMainController());
+    }
     _mainController.enableGradientBg.value = widget.enableGradientBg;
+    _logger.debug('设置启用渐变背景: ${widget.enableGradientBg}');
     // 每次都设置导航栏配置，确保页面列表正确
     _mainController.setNavBarConfig(widget.navItems);
+    _logger.info('UiMainFrame初始化完成');
   }
 
   @override
   void dispose() {
+    _logger.info('UiMainFrame销毁');
     // 不要删除控制器，避免窗口大小变化时状态重置
     super.dispose();
   }
@@ -43,7 +57,8 @@ class _UiMainFrameState extends State<UiMainFrame> {
     final mediaQuery = MediaQuery.of(context);
     final double screenWidth = mediaQuery.size.width;
     final Size screenSize = mediaQuery.size;
-    final bool isWideScreen = screenWidth > 600; // 宽屏阈值
+    final bool isWideScreen =
+        screenWidth > Constants.narrowScreenThreshold; // 宽屏阈值
 
     final theme = Theme.of(context);
     final brightness = theme.brightness;
@@ -113,6 +128,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                         physics: const NeverScrollableScrollPhysics(),
                         controller: _mainController.pageController,
                         onPageChanged: (index) {
+                          _logger.debug('宽屏模式 - 页面变化: $index');
                           _mainController.selectedIndex.value = index;
                           setState(() {});
                         },
@@ -152,6 +168,7 @@ class _UiMainFrameState extends State<UiMainFrame> {
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _mainController.pageController,
                   onPageChanged: (index) {
+                    _logger.debug('窄屏模式 - 页面变化: $index');
                     _mainController.selectedIndex.value = index;
                     setState(() {});
                   },

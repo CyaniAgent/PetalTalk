@@ -8,6 +8,7 @@
 /// 5. API调用包装方法 - 简化API调用的错误处理
 library;
 
+import 'dart:math';
 import 'package:dio/dio.dart';
 import '../core/logger.dart';
 
@@ -110,25 +111,33 @@ class ErrorHandler {
   /// 返回值：
   /// - ErrorType枚举值，表示错误的类型
   ErrorType handleDioError(DioException error) {
+    ErrorType errorType;
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.connectionError:
-        return ErrorType.network;
+        errorType = ErrorType.network;
+        break;
       case DioExceptionType.badResponse:
         if (error.response?.statusCode == 401 ||
             error.response?.statusCode == 403) {
-          return ErrorType.auth;
+          errorType = ErrorType.auth;
         } else if (error.response?.statusCode != null &&
             error.response!.statusCode! >= 500) {
-          return ErrorType.server;
+          errorType = ErrorType.server;
         } else {
-          return ErrorType.client;
+          errorType = ErrorType.client;
         }
+        break;
       default:
-        return ErrorType.unknown;
+        errorType = ErrorType.unknown;
+        break;
     }
+    logger.debug(
+      'Dio错误处理: 类型=$error.type, 状态码=${error.response?.statusCode}, 转换为=$errorType',
+    );
+    return errorType;
   }
 
   /// 根据ErrorType获取对应的错误消息
@@ -197,6 +206,7 @@ class ErrorHandler {
     String? errorMessage,
     Map<String, dynamic>? context,
   }) {
+    logger.debug('创建详细错误信息: 错误类型=${error.runtimeType}, 自定义消息=$errorMessage');
     ErrorType errorType;
     String message;
     int? errorCode;
@@ -213,7 +223,7 @@ class ErrorHandler {
       message = errorMessage ?? _instance.getErrorMessage(errorType);
     }
 
-    return DetailedError(
+    final detailedError = DetailedError(
       type: errorType,
       priority: _instance.getErrorPriority(errorType),
       message: message,
@@ -222,9 +232,25 @@ class ErrorHandler {
       errorCode: errorCode,
       context: context,
     );
+
+    logger.debug('详细错误信息创建完成: $detailedError');
+    return detailedError;
   }
 
-  /// 处理通用错误，将任意类型的错误转换为可读的错误消息
+  /// 处理通用错误，将任意类型的错误转换为详细的错误信息
+  ///
+  /// 参数：
+  /// - error: 任意类型的错误对象
+  /// - errorMessage: 可选的自定义错误消息
+  ///
+  /// 返回值：
+  /// - DetailedError: 包含详细错误信息的对象
+  static DetailedError handleError(dynamic error, [String? errorMessage]) {
+    logger.debug('处理通用错误: 错误类型=${error.runtimeType}');
+    return createDetailedError(error, errorMessage: errorMessage);
+  }
+
+  /// 处理通用错误，将任意类型的错误转换为可读的错误消息（兼容旧版本）
   ///
   /// 参数：
   /// - error: 任意类型的错误对象
@@ -232,7 +258,7 @@ class ErrorHandler {
   ///
   /// 返回值：
   /// - String: 可读的错误消息，用于显示给用户
-  static String handleError(dynamic error, [String? errorMessage]) {
+  static String extractErrorMessage(dynamic error, [String? errorMessage]) {
     return createDetailedError(error, errorMessage: errorMessage).message;
   }
 
@@ -273,25 +299,37 @@ class ErrorHandler {
   /// 参数：
   /// - apiCall: `Future<T> Function()`类型的回调函数，包含实际的API调用逻辑
   /// - retryCount: 重试次数，默认为3次
-  /// - retryDelay: 重试间隔，默认为1秒
+  /// - initialDelay: 初始重试间隔，默认为500毫秒
+  /// - maxDelay: 最大重试间隔，默认为3秒
   /// - errorMessage: 可选的自定义错误消息
   /// - context: 可选的错误上下文信息
+  /// - useExponentialBackoff: 是否使用指数退避策略，默认为true
   ///
   /// 返回值：
   /// - `Future<T?>`: 成功时返回API调用的结果，失败时返回null
   Future<T?> retryApiCall<T>(
     Future<T> Function() apiCall, {
     int retryCount = 3,
-    Duration retryDelay = const Duration(seconds: 1),
+    Duration initialDelay = const Duration(milliseconds: 500),
+    Duration maxDelay = const Duration(seconds: 3),
     String? errorMessage,
     Map<String, dynamic>? context,
+    bool useExponentialBackoff = true,
   }) async {
+    logger.debug(
+      '开始API重试调用: 重试次数=$retryCount, 初始延迟=${initialDelay.inMilliseconds}ms, 最大延迟=${maxDelay.inMilliseconds}ms, 使用指数退避=$useExponentialBackoff',
+    );
     for (int i = 0; i < retryCount; i++) {
       try {
+        logger.debug('API重试调用 - 尝试 ${i + 1}/$retryCount');
         return await apiCall();
       } catch (error) {
+        logger.debug(
+          'API重试调用 - 尝试 ${i + 1}/$retryCount 失败，错误类型=${error.runtimeType}',
+        );
         // 如果是最后一次重试，返回null
         if (i == retryCount - 1) {
+          logger.debug('API重试调用 - 所有尝试失败，调用handleApiCall处理最终错误');
           return await handleApiCall(
             apiCall,
             errorMessage: errorMessage,
@@ -299,11 +337,35 @@ class ErrorHandler {
           );
         }
 
+        // 计算重试间隔
+        Duration delay;
+        if (useExponentialBackoff) {
+          // 指数退避策略：delay = initialDelay * (2^i) + jitter
+          final exponentialDelay = initialDelay * (1 << i);
+          // 添加随机抖动，避免请求风暴
+          final jitter = Duration(milliseconds: _instance._random.nextInt(100));
+          delay = exponentialDelay + jitter;
+          // 确保不超过最大延迟
+          if (delay > maxDelay) {
+            delay = maxDelay;
+          }
+        } else {
+          // 固定间隔
+          delay = initialDelay;
+        }
+
+        logger.debug(
+          'API重试调用 - 等待 ${delay.inMilliseconds}ms 后进行第 ${i + 2}/$retryCount 次尝试',
+        );
         // 等待一段时间后重试
-        await Future.delayed(retryDelay);
+        await Future.delayed(delay);
       }
     }
 
+    logger.debug('API重试调用 - 所有尝试完成，返回null');
     return null;
   }
+
+  /// 随机数生成器，用于重试间隔的抖动
+  final _random = Random();
 }

@@ -92,8 +92,7 @@ class _NotificationListState extends State<NotificationList>
 
           // 如果是刷新操作且没有通知，显示空状态提示
           if (isRefresh && notifications.isEmpty) {
-            SnackbarUtils.showMaterialSnackbar(
-              context,
+            SnackbarUtils.showSnackbar(
               '暂无新通知',
               duration: const Duration(seconds: 1),
             );
@@ -112,19 +111,17 @@ class _NotificationListState extends State<NotificationList>
                 ? '加载通知失败，正在重试...'
                 : '加载通知失败，${_maxRetryCount - _retryCount}次重试机会';
 
-            SnackbarUtils.showMaterialSnackbar(
-              context,
+            SnackbarUtils.showSnackbar(
               errorMessage,
               duration: const Duration(seconds: 2),
-              isError: true,
+              type: SnackbarType.error,
             );
           } else if (mounted) {
             // 达到最大重试次数，显示错误提示
-            SnackbarUtils.showMaterialSnackbar(
-              context,
+            SnackbarUtils.showSnackbar(
               '加载通知失败，请检查网络连接后重试',
               duration: const Duration(seconds: 3),
-              isError: true,
+              type: SnackbarType.error,
             );
           }
         }
@@ -287,7 +284,9 @@ class _NotificationListState extends State<NotificationList>
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundImage:
@@ -296,7 +295,8 @@ class _NotificationListState extends State<NotificationList>
                         notification.fromUser!['attributes']!['avatarUrl'],
                       )
                     : null,
-                child: notification.fromUser?['attributes']?['avatarUrl'] == null
+                child:
+                    notification.fromUser?['attributes']?['avatarUrl'] == null
                     ? Text(
                         notification.fromUser?['attributes']?['username']?[0] ??
                             '?',
