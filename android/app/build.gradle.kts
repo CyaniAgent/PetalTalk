@@ -13,6 +13,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // 启用核心库脱糖功能
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    // 配置核心库脱糖依赖
+    dependencies {
+        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     }
 
     kotlinOptions {
