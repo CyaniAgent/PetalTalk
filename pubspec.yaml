@@ -80,6 +80,7 @@ dependencies:
 
   # M3E 组件库
   m3e_collection: ^0.3.7
+  webview_windows: ^0.4.0
 
 dev_dependencies:
   flutter_test:

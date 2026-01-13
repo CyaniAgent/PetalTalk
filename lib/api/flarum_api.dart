@@ -16,6 +16,7 @@ import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
+import '../utils/verification_window.dart';
 
 /// Flarum API 客户端类，封装了与 Flarum 后端通信的所有功能
 class FlarumApi {
@@ -32,6 +33,10 @@ class FlarumApi {
 
   /// Dio HTTP客户端实例
   late Dio _dio;
+
+
+  /// Cookie管理器
+  late CookieJar _cookieJar;
 
   /// 当前认证令牌
   String? _token;
@@ -89,8 +94,8 @@ class FlarumApi {
     );
 
     // 添加Cookie管理器
-    final cookieJar = CookieJar();
-    _dio.interceptors.add(CookieManager(cookieJar));
+    _cookieJar = CookieJar();
+    _dio.interceptors.add(CookieManager(_cookieJar));
 
     // 添加认证拦截器
     _dio.interceptors.add(
@@ -100,6 +105,57 @@ class FlarumApi {
             options.headers['Authorization'] = 'Token $_token';
           }
           return handler.next(options);
+        },
+      ),
+      ),
+    );
+
+    // 添加错误拦截器（处理WAF验证）
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (DioException e, ErrorInterceptorHandler handler) async {
+          // 检查是否为WAF拦截（通常403或405，或者特定内容）
+          // 阿里云ESA/LeiChi有时返回403
+          if (e.response?.statusCode == 403) {
+            // 尝试触发验证
+            final requestOptions = e.requestOptions;
+            final url = '${requestOptions.baseUrl}${requestOptions.path}';
+            
+            // 锁定Dio，避免并发请求全部失败
+            _dio.lock();
+            
+            try {
+              // 显示验证窗口
+              final cookieValue = await VerificationWindow.show(url);
+              
+              if (cookieValue != null) {
+                // 验证成功，添加Cookie
+                final cookie = Cookie('acw_sc__v2', cookieValue)
+                  ..domain = Uri.parse(_baseUrl!).host
+                  ..path = '/';
+                
+                // 验证成功，添加Cookie到CookieJar
+                final uri = Uri.parse(_baseUrl!);
+                final cookie = Cookie('acw_sc__v2', cookieValue)
+                  ..domain = uri.host
+                  ..path = '/'
+                  ..httpOnly = true;
+                
+                await _cookieJar.saveFromResponse(uri, [cookie]);
+                
+                _dio.unlock();
+                
+                // 重试请求
+                final response = await _dio.fetch(requestOptions);
+                return handler.resolve(response);
+              }
+            } catch (_) {
+              // 验证失败或取消
+            } finally {
+              _dio.unlock();
+            }
+          }
+          return handler.next(e);
         },
       ),
     );
