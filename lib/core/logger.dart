@@ -22,7 +22,7 @@ class AppLogger {
   late Logger _logger;
 
   /// 文件输出实例
-  late final FileOutput _fileOutput;
+  late final AppFileOutput _fileOutput;
 
   /// 当前日志级别
   Level _currentLevel = Level.error;
