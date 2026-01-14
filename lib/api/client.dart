@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/logger.dart';
+import '../config/constants.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -23,20 +25,30 @@ class ApiClient {
   void _initDio() {
     logger.info('ApiClient: 初始化Dio客户端，baseUrl: $_baseUrl');
 
+    // 基本请求头，无论是否使用浏览器请求头都会包含
+    final basicHeaders = {
+      'Accept': 'application/vnd.api+json',
+      'Content-Type': 'application/vnd.api+json',
+    };
+
+    // 浏览器请求头，根据设置决定是否添加
+    final browserHeaders = {
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Referer': _baseUrl,
+      'Origin': _baseUrl,
+    };
+
+    // 合并请求头
+    final headers = {...basicHeaders, ...browserHeaders};
+
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl!,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
-        headers: {
-          'Accept': 'application/vnd.api+json',
-          'Content-Type': 'application/vnd.api+json',
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Referer': _baseUrl,
-          'Origin': _baseUrl,
-        },
+        headers: headers,
       ),
     );
 
@@ -57,7 +69,7 @@ class ApiClient {
     // 添加请求日志拦截器
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           logger.debug('ApiClient: 发送请求 - ${options.method} ${options.uri}');
           if (options.data != null) {
             logger.debug('ApiClient: 请求数据 - ${options.data}');
@@ -65,6 +77,22 @@ class ApiClient {
           if (_token != null) {
             options.headers['Authorization'] = 'Token $_token';
           }
+
+          // 根据设置调整请求头
+          final prefs = await SharedPreferences.getInstance();
+          final useBrowserHeaders =
+              prefs.getBool(Constants.useBrowserHeadersKey) ??
+              Constants.defaultUseBrowserHeaders;
+
+          if (!useBrowserHeaders) {
+            // 如果不使用浏览器请求头，只保留基本请求头
+            options.headers = {
+              'Accept': 'application/vnd.api+json',
+              'Content-Type': 'application/vnd.api+json',
+              if (_token != null) 'Authorization': 'Token $_token',
+            };
+          }
+
           return handler.next(options);
         },
 

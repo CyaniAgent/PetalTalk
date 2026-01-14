@@ -32,7 +32,7 @@ class AboutPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Text('v0.0.10', style: Theme.of(context).textTheme.bodyMedium),
+              Text('v0.0.11', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 32),
 
               // 开发者信息

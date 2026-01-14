@@ -159,10 +159,17 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Obx(
-                          () => widget
-                              .settingItems[selectedIndex.value]['content'],
-                        ),
+                        child: Obx(() {
+                          final content = widget
+                              .settingItems[selectedIndex.value]['content'];
+                          if (content is ListView) {
+                            return SizedBox(
+                              height: double.infinity,
+                              child: content,
+                            );
+                          }
+                          return content;
+                        }),
                       ),
                     ),
                   ),
@@ -195,7 +202,9 @@ class _UiSettingPageState extends State<UiSettingPage> {
                             Get.to(
                               () => Scaffold(
                                 appBar: AppBar(title: Text(item['title'])),
-                                body: item['content'],
+                                body: SingleChildScrollView(
+                                  child: item['content'],
+                                ),
                               ),
                             );
                           },

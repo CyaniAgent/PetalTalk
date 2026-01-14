@@ -19,7 +19,20 @@ class _SettingPageState extends State<SettingPage> {
   final AppLogger _logger = AppLogger();
   final AppearanceService _appearanceService = AppearanceService();
   final FlarumApi _api = FlarumApi();
-  bool _isDarkMode = false;
+
+  // 使用Rx变量实现响应式状态管理
+  final RxBool _isDarkMode = false.obs;
+  final RxBool _useDynamicColor = true.obs;
+  final RxString _accentColor = 'blue'.obs;
+  final RxBool _enableNotifications = true.obs;
+  final RxBool _enableMessageNotifications = true.obs;
+  final RxBool _enableMentionNotifications = true.obs;
+  final RxBool _enableReplyNotifications = true.obs;
+  final RxBool _enableSystemNotifications = true.obs;
+  final RxString _logLevel = 'error'.obs;
+  final RxInt _maxLogSize = 10.obs;
+  final RxBool _enableLogExport = true.obs;
+  final RxBool _useBrowserHeaders = true.obs;
 
   @override
   void initState() {
@@ -34,22 +47,6 @@ class _SettingPageState extends State<SettingPage> {
     _logger.info('SettingPage销毁');
     super.dispose();
   }
-
-  // 更多设置状态
-  bool _useDynamicColor = true;
-  String _accentColor = 'blue';
-
-  // 通知设置状态
-  bool _enableNotifications = true;
-  bool _enableMessageNotifications = true;
-  bool _enableMentionNotifications = true;
-  bool _enableReplyNotifications = true;
-  bool _enableSystemNotifications = true;
-
-  // 日志设置状态
-  String _logLevel = 'error';
-  int _maxLogSize = 10;
-  bool _enableLogExport = true;
 
   // 加载当前设置
   Future<void> _loadCurrentSettings() async {
@@ -68,23 +65,25 @@ class _SettingPageState extends State<SettingPage> {
         _appearanceService.loadLogLevel(),
         _appearanceService.loadMaxLogSize(),
         _appearanceService.loadEnableLogExport(),
+        _appearanceService.loadUseBrowserHeaders(),
       ]);
 
-      setState(() {
-        _isDarkMode = settings[0] != ThemeMode.light;
-        _useDynamicColor = settings[1] as bool;
-        _accentColor = settings[2] as String;
-        _enableNotifications = settings[3] as bool;
-        _enableMessageNotifications = settings[4] as bool;
-        _enableMentionNotifications = settings[5] as bool;
-        _enableReplyNotifications = settings[6] as bool;
-        _enableSystemNotifications = settings[7] as bool;
-        _logLevel = settings[8] as String;
-        _maxLogSize = settings[9] as int;
-        _enableLogExport = settings[10] as bool;
-      });
+      // 直接更新Rx变量的值，不需要setState
+      _isDarkMode.value = settings[0] != ThemeMode.light;
+      _useDynamicColor.value = settings[1] as bool;
+      _accentColor.value = settings[2] as String;
+      _enableNotifications.value = settings[3] as bool;
+      _enableMessageNotifications.value = settings[4] as bool;
+      _enableMentionNotifications.value = settings[5] as bool;
+      _enableReplyNotifications.value = settings[6] as bool;
+      _enableSystemNotifications.value = settings[7] as bool;
+      _logLevel.value = settings[8] as String;
+      _maxLogSize.value = settings[9] as int;
+      _enableLogExport.value = settings[10] as bool;
+      _useBrowserHeaders.value = settings[11] as bool;
+
       _logger.info(
-        '当前设置加载完成: 深色模式 = $_isDarkMode, 动态色彩 = $_useDynamicColor, 强调色 = $_accentColor, 通知启用 = $_enableNotifications',
+        '当前设置加载完成: 深色模式 = ${_isDarkMode.value}, 动态色彩 = ${_useDynamicColor.value}, 强调色 = ${_accentColor.value}, 通知启用 = ${_enableNotifications.value}',
       );
     } catch (e, stackTrace) {
       _logger.error('加载当前设置出错', e, stackTrace);
@@ -98,9 +97,7 @@ class _SettingPageState extends State<SettingPage> {
     try {
       final themeMode = value ? ThemeMode.dark : ThemeMode.light;
       await _appearanceService.saveThemeMode(themeMode);
-      setState(() {
-        _isDarkMode = value;
-      });
+      _isDarkMode.value = value;
       Get.changeThemeMode(themeMode);
       _logger.info('深色模式切换成功: $value');
     } catch (e, stackTrace) {
@@ -114,9 +111,7 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换动态色彩: $value');
     try {
       await _appearanceService.saveUseDynamicColor(value);
-      setState(() {
-        _useDynamicColor = value;
-      });
+      _useDynamicColor.value = value;
       _logger.info('动态色彩切换成功: $value');
 
       // 显示重启确认对话框
@@ -164,9 +159,7 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('更新强调色: $value');
     try {
       await _appearanceService.saveAccentColor(value);
-      setState(() {
-        _accentColor = value;
-      });
+      _accentColor.value = value;
       // 重新加载主题设置
       _loadThemeSettings();
       _logger.info('强调色更新成功: $value');
@@ -181,21 +174,19 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换启用所有通知: $value');
     try {
       await _appearanceService.saveEnableNotifications(value);
-      setState(() {
-        _enableNotifications = value;
-        // 如果禁用所有通知，同时禁用所有子类型通知
-        if (!value) {
-          _enableMessageNotifications = false;
-          _enableMentionNotifications = false;
-          _enableReplyNotifications = false;
-          _enableSystemNotifications = false;
-          // 保存子类型通知设置
-          _appearanceService.saveEnableMessageNotifications(false);
-          _appearanceService.saveEnableMentionNotifications(false);
-          _appearanceService.saveEnableReplyNotifications(false);
-          _appearanceService.saveEnableSystemNotifications(false);
-        }
-      });
+      _enableNotifications.value = value;
+      // 如果禁用所有通知，同时禁用所有子类型通知
+      if (!value) {
+        _enableMessageNotifications.value = false;
+        _enableMentionNotifications.value = false;
+        _enableReplyNotifications.value = false;
+        _enableSystemNotifications.value = false;
+        // 保存子类型通知设置
+        _appearanceService.saveEnableMessageNotifications(false);
+        _appearanceService.saveEnableMentionNotifications(false);
+        _appearanceService.saveEnableReplyNotifications(false);
+        _appearanceService.saveEnableSystemNotifications(false);
+      }
       _logger.info('启用所有通知设置成功: $value');
     } catch (e, stackTrace) {
       _logger.error('切换启用所有通知出错', e, stackTrace);
@@ -208,14 +199,12 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换消息通知: $value');
     try {
       await _appearanceService.saveEnableMessageNotifications(value);
-      setState(() {
-        _enableMessageNotifications = value;
-        // 如果启用了某个子类型通知，同时启用所有通知
-        if (value && !_enableNotifications) {
-          _enableNotifications = true;
-          _appearanceService.saveEnableNotifications(true);
-        }
-      });
+      _enableMessageNotifications.value = value;
+      // 如果启用了某个子类型通知，同时启用所有通知
+      if (value && !_enableNotifications.value) {
+        _enableNotifications.value = true;
+        _appearanceService.saveEnableNotifications(true);
+      }
       _logger.info('消息通知设置成功: $value');
     } catch (e, stackTrace) {
       _logger.error('切换消息通知出错', e, stackTrace);
@@ -228,14 +217,12 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换提及通知: $value');
     try {
       await _appearanceService.saveEnableMentionNotifications(value);
-      setState(() {
-        _enableMentionNotifications = value;
-        // 如果启用了某个子类型通知，同时启用所有通知
-        if (value && !_enableNotifications) {
-          _enableNotifications = true;
-          _appearanceService.saveEnableNotifications(true);
-        }
-      });
+      _enableMentionNotifications.value = value;
+      // 如果启用了某个子类型通知，同时启用所有通知
+      if (value && !_enableNotifications.value) {
+        _enableNotifications.value = true;
+        _appearanceService.saveEnableNotifications(true);
+      }
       _logger.info('提及通知设置成功: $value');
     } catch (e, stackTrace) {
       _logger.error('切换提及通知出错', e, stackTrace);
@@ -248,14 +235,12 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换回复通知: $value');
     try {
       await _appearanceService.saveEnableReplyNotifications(value);
-      setState(() {
-        _enableReplyNotifications = value;
-        // 如果启用了某个子类型通知，同时启用所有通知
-        if (value && !_enableNotifications) {
-          _enableNotifications = true;
-          _appearanceService.saveEnableNotifications(true);
-        }
-      });
+      _enableReplyNotifications.value = value;
+      // 如果启用了某个子类型通知，同时启用所有通知
+      if (value && !_enableNotifications.value) {
+        _enableNotifications.value = true;
+        _appearanceService.saveEnableNotifications(true);
+      }
       _logger.info('回复通知设置成功: $value');
     } catch (e, stackTrace) {
       _logger.error('切换回复通知出错', e, stackTrace);
@@ -268,14 +253,12 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换系统通知: $value');
     try {
       await _appearanceService.saveEnableSystemNotifications(value);
-      setState(() {
-        _enableSystemNotifications = value;
-        // 如果启用了某个子类型通知，同时启用所有通知
-        if (value && !_enableNotifications) {
-          _enableNotifications = true;
-          _appearanceService.saveEnableNotifications(true);
-        }
-      });
+      _enableSystemNotifications.value = value;
+      // 如果启用了某个子类型通知，同时启用所有通知
+      if (value && !_enableNotifications.value) {
+        _enableNotifications.value = true;
+        _appearanceService.saveEnableNotifications(true);
+      }
       _logger.info('系统通知设置成功: $value');
     } catch (e, stackTrace) {
       _logger.error('切换系统通知出错', e, stackTrace);
@@ -305,11 +288,8 @@ class _SettingPageState extends State<SettingPage> {
     try {
       await _appearanceService.saveLogLevel(value);
       _logger.setLogLevel(value);
-      setState(() {
-        _logLevel = value;
-      });
+      _logLevel.value = value;
       _logger.info('日志级别更新成功: $value');
-      SnackbarUtils.showSnackbar('日志级别已更新');
     } catch (e, stackTrace) {
       _logger.error('更新日志级别出错', e, stackTrace);
       SnackbarUtils.showSnackbar('更新日志级别失败', type: SnackbarType.error);
@@ -322,11 +302,8 @@ class _SettingPageState extends State<SettingPage> {
     try {
       await _appearanceService.saveMaxLogSize(value);
       await _logger.setMaxLogSize(value);
-      setState(() {
-        _maxLogSize = value;
-      });
+      _maxLogSize.value = value;
       _logger.info('最大日志大小更新成功: $value MB');
-      SnackbarUtils.showSnackbar('最大日志大小已更新');
     } catch (e, stackTrace) {
       _logger.error('更新最大日志大小出错', e, stackTrace);
       SnackbarUtils.showSnackbar('更新最大日志大小失败', type: SnackbarType.error);
@@ -338,11 +315,8 @@ class _SettingPageState extends State<SettingPage> {
     _logger.debug('切换日志导出: $value');
     try {
       await _appearanceService.saveEnableLogExport(value);
-      setState(() {
-        _enableLogExport = value;
-      });
+      _enableLogExport.value = value;
       _logger.info('日志导出设置成功: $value');
-      SnackbarUtils.showSnackbar('日志导出设置已更新');
     } catch (e, stackTrace) {
       _logger.error('切换日志导出出错', e, stackTrace);
       SnackbarUtils.showSnackbar('切换日志导出失败', type: SnackbarType.error);
@@ -415,6 +389,20 @@ class _SettingPageState extends State<SettingPage> {
     } catch (e, stackTrace) {
       _logger.error('删除日志出错', e, stackTrace);
       SnackbarUtils.showSnackbar('删除日志失败', type: SnackbarType.error);
+    }
+  }
+
+  // 切换是否使用浏览器请求头
+  Future<void> _toggleUseBrowserHeaders(bool value) async {
+    _logger.debug('切换使用浏览器请求头: $value');
+    try {
+      await _appearanceService.saveUseBrowserHeaders(value);
+      _useBrowserHeaders.value = value;
+      _logger.info('使用浏览器请求头设置成功: $value');
+      SnackbarUtils.showSnackbar('API请求设置已更新');
+    } catch (e, stackTrace) {
+      _logger.error('切换使用浏览器请求头出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('切换API请求设置失败', type: SnackbarType.error);
     }
   }
 
@@ -491,7 +479,7 @@ class _SettingPageState extends State<SettingPage> {
 
   // 构建颜色选择项
   Widget _buildColorOption(String colorName, Color color) {
-    final isSelected = _accentColor == colorName;
+    final isSelected = _accentColor.value == colorName;
     return GestureDetector(
       onTap: () {
         _updateAccentColor(colorName);
@@ -555,85 +543,91 @@ class _SettingPageState extends State<SettingPage> {
       {
         'icon': Icons.notifications,
         'title': '通知设置',
-        'content': ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            SwitchListTile(
-              title: const Text('启用通知'),
-              subtitle: const Text('接收所有类型的通知'),
-              value: _enableNotifications,
-              onChanged: _toggleEnableNotifications,
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('消息通知'),
-              subtitle: const Text('接收新消息通知'),
-              value: _enableMessageNotifications,
-              onChanged: _enableNotifications
-                  ? _toggleMessageNotifications
-                  : null,
-            ),
-            SwitchListTile(
-              title: const Text('提及通知'),
-              subtitle: const Text('当有人@你时通知'),
-              value: _enableMentionNotifications,
-              onChanged: _enableNotifications
-                  ? _toggleMentionNotifications
-                  : null,
-            ),
-            SwitchListTile(
-              title: const Text('回复通知'),
-              subtitle: const Text('当有人回复你时通知'),
-              value: _enableReplyNotifications,
-              onChanged: _enableNotifications
-                  ? _toggleReplyNotifications
-                  : null,
-            ),
-            SwitchListTile(
-              title: const Text('系统通知'),
-              subtitle: const Text('接收系统通知'),
-              value: _enableSystemNotifications,
-              onChanged: _enableNotifications
-                  ? _toggleSystemNotifications
-                  : null,
-            ),
-          ],
+        'content': Obx(
+          () => ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              SwitchListTile(
+                title: const Text('启用通知'),
+                subtitle: const Text('接收所有类型的通知'),
+                value: _enableNotifications.value,
+                onChanged: _toggleEnableNotifications,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: const Text('消息通知'),
+                subtitle: const Text('接收新消息通知'),
+                value: _enableMessageNotifications.value,
+                onChanged: _enableNotifications.value
+                    ? _toggleMessageNotifications
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('提及通知'),
+                subtitle: const Text('当有人@你时通知'),
+                value: _enableMentionNotifications.value,
+                onChanged: _enableNotifications.value
+                    ? _toggleMentionNotifications
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('回复通知'),
+                subtitle: const Text('当有人回复你时通知'),
+                value: _enableReplyNotifications.value,
+                onChanged: _enableNotifications.value
+                    ? _toggleReplyNotifications
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('系统通知'),
+                subtitle: const Text('接收系统通知'),
+                value: _enableSystemNotifications.value,
+                onChanged: _enableNotifications.value
+                    ? _toggleSystemNotifications
+                    : null,
+              ),
+            ],
+          ),
         ),
       },
       {
         'icon': Icons.palette,
         'title': '外观设置',
-        'content': ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            SwitchListTile(
-              title: const Text('深色模式'),
-              subtitle: const Text('开启或关闭深色主题'),
-              value: _isDarkMode,
-              onChanged: _toggleDarkMode,
-            ),
-            SwitchListTile(
-              title: const Text('动态色彩'),
-              subtitle: const Text('使用系统动态色彩主题 (Material Design 3)'),
-              value: _useDynamicColor,
-              onChanged: _toggleDynamicColor,
-            ),
-            ListTile(
-              title: const Text('强调色'),
-              subtitle: const Text('选择应用的主题色'),
-              trailing: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _getAccentColor(_accentColor),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
+        'content': Obx(
+          () => ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              SwitchListTile(
+                title: const Text('深色模式'),
+                subtitle: const Text('开启或关闭深色主题'),
+                value: _isDarkMode.value,
+                onChanged: _toggleDarkMode,
               ),
-              onTap: _useDynamicColor ? null : () => _showAccentColorDialog(),
-              enabled: !_useDynamicColor,
-            ),
-          ],
+              SwitchListTile(
+                title: const Text('动态色彩'),
+                subtitle: const Text('使用系统动态色彩主题 (Material Design 3)'),
+                value: _useDynamicColor.value,
+                onChanged: _toggleDynamicColor,
+              ),
+              ListTile(
+                title: const Text('强调色'),
+                subtitle: const Text('选择应用的主题色'),
+                trailing: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _getAccentColor(_accentColor.value),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                ),
+                onTap: _useDynamicColor.value
+                    ? null
+                    : () => _showAccentColorDialog(),
+                enabled: !_useDynamicColor.value,
+              ),
+            ],
+          ),
         ),
       },
       {
@@ -767,7 +761,7 @@ class _SettingPageState extends State<SettingPage> {
                                     // 切换到该端点
                                     await _api.switchEndpoint(endpoint);
                                     // 重新加载当前端点信息
-                                    setState(() {});
+                                    _loadCurrentSettings();
                                     SnackbarUtils.showSnackbar('已切换到新端点');
                                   },
                                   icon: const Icon(Icons.swap_horiz),
@@ -808,7 +802,7 @@ class _SettingPageState extends State<SettingPage> {
                                     // 删除端点
                                     await _api.deleteEndpoint(endpoint);
                                     // 重新加载端点列表
-                                    setState(() {});
+                                    _loadCurrentSettings();
                                     SnackbarUtils.showSnackbar('已删除端点');
                                   }
                                 },
@@ -832,149 +826,175 @@ class _SettingPageState extends State<SettingPage> {
     settingItems.add({
       'icon': Icons.history,
       'title': '日志设置',
-      'content': ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 日志管理操作
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('日志管理', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _viewLogs,
-                        icon: const Icon(Icons.visibility),
-                        label: const Text('查看日志'),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _exportLogs,
-                        icon: const Icon(Icons.download),
-                        label: const Text('导出日志'),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _deleteLogs,
-                        icon: const Icon(Icons.delete),
-                        label: const Text('删除日志'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+      'content': Obx(
+        () => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // 日志管理操作
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '日志管理',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _viewLogs,
+                          icon: const Icon(Icons.visibility),
+                          label: const Text('查看日志'),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 日志级别设置
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('日志级别', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text(
-                    '设置日志记录的详细程度',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-                  SegmentedButton<String>(
-                    selected: <String>{_logLevel},
-                    onSelectionChanged: (Set<String> newSelection) {
-                      _updateLogLevel(newSelection.first);
-                    },
-                    segments: const <ButtonSegment<String>>[
-                      ButtonSegment<String>(
-                        value: 'error',
-                        label: Text('错误'),
-                        icon: Icon(Icons.error_outline),
-                      ),
-                      ButtonSegment<String>(
-                        value: 'warning',
-                        label: Text('警告'),
-                        icon: Icon(Icons.warning_amber_outlined),
-                      ),
-                      ButtonSegment<String>(
-                        value: 'info',
-                        label: Text('信息'),
-                        icon: Icon(Icons.info_outline),
-                      ),
-                      ButtonSegment<String>(
-                        value: 'debug',
-                        label: Text('调试'),
-                        icon: Icon(Icons.bug_report_outlined),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 最大日志大小设置
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '最大日志大小',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '设置日志文件的最大占用空间 (MB)',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Slider(
-                          value: _maxLogSize.toDouble(),
-                          min: 1,
-                          max: 50,
-                          divisions: 49,
-                          label: '$_maxLogSize MB',
-                          onChanged: (value) {
-                            setState(() {
-                              _maxLogSize = value.toInt();
-                            });
-                          },
-                          onChangeEnd: (value) {
-                            _updateMaxLogSize(value.toInt());
-                          },
+                        ElevatedButton.icon(
+                          onPressed: _exportLogs,
+                          icon: const Icon(Icons.download),
+                          label: const Text('导出日志'),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text('$_maxLogSize MB'),
-                    ],
-                  ),
-                ],
+                        ElevatedButton.icon(
+                          onPressed: _deleteLogs,
+                          icon: const Icon(Icons.delete),
+                          label: const Text('删除日志'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // 启用日志导出
-          SwitchListTile(
-            title: const Text('启用日志导出'),
-            subtitle: const Text('允许将日志导出到文件'),
-            value: _enableLogExport,
-            onChanged: _toggleLogExport,
-          ),
-        ],
+            // 日志级别设置
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '日志级别',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '设置日志记录的详细程度',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    SegmentedButton<String>(
+                      selected: <String>{_logLevel.value},
+                      onSelectionChanged: (Set<String> newSelection) {
+                        _updateLogLevel(newSelection.first);
+                      },
+                      segments: const <ButtonSegment<String>>[
+                        ButtonSegment<String>(
+                          value: 'error',
+                          label: Text('错误'),
+                          icon: Icon(Icons.error_outline),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'warning',
+                          label: Text('警告'),
+                          icon: Icon(Icons.warning_amber_outlined),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'info',
+                          label: Text('信息'),
+                          icon: Icon(Icons.info_outline),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'debug',
+                          label: Text('调试'),
+                          icon: Icon(Icons.bug_report_outlined),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 最大日志大小设置
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '最大日志大小',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '设置日志文件的最大占用空间 (MB)',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Slider(
+                            value: _maxLogSize.value.toDouble(),
+                            min: 1,
+                            max: 50,
+                            divisions: 49,
+                            label: '${_maxLogSize.value} MB',
+                            onChanged: (value) {
+                              _maxLogSize.value = value.toInt();
+                            },
+                            onChangeEnd: (value) {
+                              _updateMaxLogSize(value.toInt());
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text('${_maxLogSize.value} MB'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 启用日志导出
+            SwitchListTile(
+              title: const Text('启用日志导出'),
+              subtitle: const Text('允许将日志导出到文件'),
+              value: _enableLogExport.value,
+              onChanged: _toggleLogExport,
+            ),
+          ],
+        ),
+      ),
+    });
+
+    // 添加API请求设置
+    settingItems.add({
+      'icon': Icons.cloud_upload,
+      'title': 'API请求设置',
+      'content': Obx(
+        () => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // 使用浏览器请求头
+            SwitchListTile(
+              title: const Text('使用浏览器请求头'),
+              subtitle: const Text('模仿正常浏览器请求，包括User-Agent、Referer等头信息'),
+              value: _useBrowserHeaders.value,
+              onChanged: _toggleUseBrowserHeaders,
+            ),
+          ],
+        ),
       ),
     });
 

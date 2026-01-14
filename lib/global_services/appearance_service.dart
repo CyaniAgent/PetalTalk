@@ -266,26 +266,13 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用系统通知
-  Future<void> saveEnableSystemNotifications(bool enable) async {
-    _logger.debug('开始保存系统通知设置: $enable');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_enableSystemNotificationsKey, enable);
-    _logger.info('保存系统通知设置完成: $enable');
-  }
-
-  // 日志相关设置键
-  static const String _logLevelKey = Constants.logLevelKey;
-  static const String _maxLogSizeKey = Constants.maxLogSizeKey;
-  static const String _enableLogExportKey = Constants.enableLogExportKey;
-
   // 加载日志级别
   Future<String> loadLogLevel() async {
     _logger.debug('开始加载日志级别设置');
     final prefs = await SharedPreferences.getInstance();
     final result = _safeGetString(
       prefs,
-      _logLevelKey,
+      Constants.logLevelKey,
       Constants.defaultLogLevel,
     );
     _logger.info('加载日志级别设置完成: $result');
@@ -296,7 +283,7 @@ class AppearanceService {
   Future<void> saveLogLevel(String logLevel) async {
     _logger.debug('开始保存日志级别设置: $logLevel');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_logLevelKey, logLevel);
+    await prefs.setString(Constants.logLevelKey, logLevel);
     _logger.info('保存日志级别设置完成: $logLevel');
   }
 
@@ -304,30 +291,16 @@ class AppearanceService {
   Future<int> loadMaxLogSize() async {
     _logger.debug('开始加载最大日志大小设置');
     final prefs = await SharedPreferences.getInstance();
-    try {
-      final value = prefs.get(_maxLogSizeKey);
-      _logger.debug('获取最大日志大小存储值: $value (类型: ${value?.runtimeType})');
-      if (value is int) {
-        _logger.info('加载最大日志大小设置完成: $value');
-        return value;
-      } else if (value is String) {
-        // 如果是String类型，转换为int
-        final result = int.tryParse(value) ?? Constants.defaultMaxLogSize;
-        _logger.info('加载最大日志大小设置完成: $result');
-        return result;
-      }
-    } catch (e, stackTrace) {
-      _logger.error('加载最大日志大小出错', e, stackTrace);
-    }
-    _logger.info('加载最大日志大小设置完成，使用默认值: ${Constants.defaultMaxLogSize}');
-    return Constants.defaultMaxLogSize;
+    final result = prefs.getInt(Constants.maxLogSizeKey) ?? Constants.defaultMaxLogSize;
+    _logger.info('加载最大日志大小设置完成: $result');
+    return result;
   }
 
   // 保存最大日志大小
   Future<void> saveMaxLogSize(int maxLogSize) async {
     _logger.debug('开始保存最大日志大小设置: $maxLogSize');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_maxLogSizeKey, maxLogSize);
+    await prefs.setInt(Constants.maxLogSizeKey, maxLogSize);
     _logger.info('保存最大日志大小设置完成: $maxLogSize');
   }
 
@@ -337,7 +310,7 @@ class AppearanceService {
     final prefs = await SharedPreferences.getInstance();
     final result = _safeGetBool(
       prefs,
-      _enableLogExportKey,
+      Constants.enableLogExportKey,
       Constants.defaultEnableLogExport,
     );
     _logger.info('加载日志导出设置完成: $result');
@@ -345,10 +318,39 @@ class AppearanceService {
   }
 
   // 保存是否启用日志导出
-  Future<void> saveEnableLogExport(bool enable) async {
-    _logger.debug('开始保存日志导出设置: $enable');
+  Future<void> saveEnableLogExport(bool enableLogExport) async {
+    _logger.debug('开始保存日志导出设置: $enableLogExport');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_enableLogExportKey, enable);
-    _logger.info('保存日志导出设置完成: $enable');
+    await prefs.setBool(Constants.enableLogExportKey, enableLogExport);
+    _logger.info('保存日志导出设置完成: $enableLogExport');
+  }
+
+  // 保存是否启用系统通知
+  Future<void> saveEnableSystemNotifications(bool enable) async {
+    _logger.debug('开始保存系统通知设置: $enable');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enableSystemNotificationsKey, enable);
+    _logger.info('保存系统通知设置完成: $enable');
+  }
+
+  // 加载是否使用浏览器请求头
+  Future<bool> loadUseBrowserHeaders() async {
+    _logger.debug('开始加载浏览器请求头设置');
+    final prefs = await SharedPreferences.getInstance();
+    final result = _safeGetBool(
+      prefs,
+      Constants.useBrowserHeadersKey,
+      Constants.defaultUseBrowserHeaders,
+    );
+    _logger.info('加载浏览器请求头设置完成: $result');
+    return result;
+  }
+
+  // 保存是否使用浏览器请求头
+  Future<void> saveUseBrowserHeaders(bool useBrowserHeaders) async {
+    _logger.debug('开始保存浏览器请求头设置: $useBrowserHeaders');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(Constants.useBrowserHeadersKey, useBrowserHeaders);
+    _logger.info('保存浏览器请求头设置完成: $useBrowserHeaders');
   }
 }

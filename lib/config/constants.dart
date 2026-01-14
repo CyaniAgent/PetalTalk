@@ -61,4 +61,8 @@ class Constants {
   static const String defaultLogLevel = 'error';
   static const int defaultMaxLogSize = 10; // MB
   static const bool defaultEnableLogExport = true;
+  
+  // API请求相关
+  static const String useBrowserHeadersKey = 'use_browser_headers';
+  static const bool defaultUseBrowserHeaders = true;
 }
