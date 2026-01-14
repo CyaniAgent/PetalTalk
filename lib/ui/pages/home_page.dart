@@ -13,11 +13,11 @@ import 'package:m3e_collection/m3e_collection.dart';
 
 import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
-import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../components/discussion/discussion_card.dart';
 import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
+import 'profile_page.dart';
 import '../../state/main_state.dart';
 
 class DiscussionList extends StatefulWidget {
@@ -266,7 +266,7 @@ class _HomePageState extends State<HomePage> {
         'selectIcon': const Icon(Icons.person),
         'label': '我的',
         'count': 0,
-        'page': const _ProfilePage(),
+        'page': const ProfilePage(),
       },
     ];
   }
@@ -274,72 +274,5 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return UiMainFrame(navItems: navItems, enableGradientBg: true);
-  }
-}
-
-// 个人中心页面，提取为独立组件
-class _ProfilePage extends GetView {
-  const _ProfilePage();
-
-  @override
-  Widget build(BuildContext context) {
-    final AuthService authService = Get.find<AuthService>();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('个人中心')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (authService.isLoggedIn())
-              Column(
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.blue,
-                    // 这里应该显示用户头像
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '占位符',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('占位符@sorange.top'),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // 退出登录
-                      authService.logout();
-                      SnackbarUtils.showSnackbar('已退出登录');
-                      // 刷新页面
-                      final mainController = Get.find<UiMainController>();
-                      mainController.setSelectedIndex(0);
-                      Get.offAllNamed('/home');
-                    },
-                    child: const Text('退出登录'),
-                  ),
-                ],
-              )
-            else
-              Column(
-                children: [
-                  const Icon(Icons.person_off, size: 80, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('您尚未登录', style: TextStyle(fontSize: 18)),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // 跳转到登录页面
-                      Get.toNamed('/login');
-                    },
-                    child: const Text('登录'),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
   }
 }

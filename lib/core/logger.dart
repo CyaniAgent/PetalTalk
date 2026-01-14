@@ -5,8 +5,6 @@
 /// 2. 控制台和文件双输出
 /// 3. 动态日志级别调整
 /// 4. 日志文件管理（大小限制、清理等）
-library;
-
 import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
@@ -21,10 +19,10 @@ class AppLogger {
   AppLogger._internal();
 
   /// 日志实例
-  late final Logger _logger;
+  late Logger _logger;
 
   /// 文件输出实例
-  late final FileOutput _fileOutput;
+  late final AppFileOutput _fileOutput;
 
   /// 当前日志级别
   Level _currentLevel = Level.error;
@@ -43,13 +41,13 @@ class AppLogger {
     // 初始化日志器
     _logger = Logger(
       level: _currentLevel, // 初始日志级别
-      output: MultiOutput([consoleOutput, _fileOutput]),
+      output: AppMultiOutput([consoleOutput, _fileOutput]),
       printer: SimplePrinter(),
     );
   }
 
   /// 创建文件输出
-  Future<FileOutput> _createFileOutput() async {
+  Future<AppFileOutput> _createFileOutput() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       _logFilePath = '${directory.path}/app_logs.txt';
@@ -63,14 +61,14 @@ class AppLogger {
       // 检查文件大小，超过限制则清理
       await _checkAndCleanLogFile(file);
 
-      return FileOutput(
+      return AppFileOutput(
         file: file,
         overrideExisting: false,
         mode: FileMode.append,
       );
     } catch (e) {
       // 如果文件创建失败，返回控制台输出
-      return FileOutput(
+      return AppFileOutput(
         file: File('./app_logs.txt'),
         overrideExisting: false,
         mode: FileMode.append,
@@ -122,7 +120,7 @@ class AppLogger {
     // 重新创建日志器以更新级别
     _logger = Logger(
       level: _currentLevel,
-      output: MultiOutput([consoleOutput, _fileOutput]),
+      output: AppMultiOutput([consoleOutput, _fileOutput]),
       printer: SimplePrinter(),
     );
   }
@@ -221,13 +219,13 @@ class AppLogger {
 final logger = AppLogger();
 
 /// 文件输出类
-class FileOutput extends LogOutput {
+class AppFileOutput extends LogOutput {
   final File file;
   final bool overrideExisting;
   final FileMode mode;
   IOSink? _sink;
 
-  FileOutput({
+  AppFileOutput({
     required this.file,
     this.overrideExisting = false,
     this.mode = FileMode.write,
@@ -235,6 +233,7 @@ class FileOutput extends LogOutput {
 
   @override
   Future<void> init() async {
+    if (_sink != null) return;
     if (overrideExisting) {
       if (file.existsSync()) {
         file.deleteSync();
@@ -258,10 +257,10 @@ class FileOutput extends LogOutput {
 }
 
 /// 多输出类
-class MultiOutput extends LogOutput {
+class AppMultiOutput extends LogOutput {
   final List<LogOutput> outputs;
 
-  MultiOutput(this.outputs);
+  AppMultiOutput(this.outputs);
 
   @override
   Future<void> init() async {

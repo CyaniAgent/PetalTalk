@@ -9,10 +9,12 @@ import '../api/services/auth_service.dart';
 import '../api/services/discussion_service.dart';
 import '../api/services/notification_service.dart';
 import '../api/services/post_service.dart';
+import '../api/services/user_service.dart';
 import '../global_services/window_service.dart';
 import '../global_services/theme_service.dart';
 import '../global_services/notification_service.dart';
 import '../state/main_state.dart';
+import '../state/profile_controller.dart';
 import './cache_service.dart';
 
 /// 服务定位器类，提供统一的服务注册和管理
@@ -40,11 +42,13 @@ class ServiceLocator {
 
     // 注册状态管理服务（永久单例）
     Get.put(UiMainController(), permanent: true);
+    Get.put(ProfileController(), permanent: true);
 
     // 注册非关键API服务（懒加载，只有在实际使用时才创建实例）
     Get.lazyPut(() => AuthService(), fenix: true);
     Get.lazyPut(() => DiscussionService(), fenix: true);
     Get.lazyPut(() => NotificationService(), fenix: true);
     Get.lazyPut(() => PostService(), fenix: true);
+    Get.lazyPut(() => UserService(), fenix: true);
   }
 }

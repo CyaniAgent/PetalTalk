@@ -187,6 +187,26 @@ class AuthService {
     return _api.token != null;
   }
 
+  /// 获取当前登录用户的ID
+  Future<String?> getCurrentUserId() async {
+    if (_api.baseUrl == null) return null;
+    final prefs = await SharedPreferences.getInstance();
+    final endpointHash = _api.baseUrl!.hashCode.toString();
+    final userIdKey =
+        '${Constants.endpointDataPrefix}${endpointHash}_${Constants.userIdKey}';
+    return prefs.getString(userIdKey);
+  }
+
+  /// 获取当前登录用户的用户名
+  Future<String?> getCurrentUsername() async {
+    if (_api.baseUrl == null) return null;
+    final prefs = await SharedPreferences.getInstance();
+    final endpointHash = _api.baseUrl!.hashCode.toString();
+    final usernameKey =
+        '${Constants.endpointDataPrefix}${endpointHash}_${Constants.usernameKey}';
+    return prefs.getString(usernameKey);
+  }
+
   /// 获取当前认证令牌
   ///
   /// 返回值：

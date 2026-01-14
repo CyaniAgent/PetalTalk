@@ -45,12 +45,12 @@ class AboutPage extends StatelessWidget {
                       const ListTile(
                         leading: Icon(Icons.person),
                         title: Text('开发者'),
-                        subtitle: Text('SakuraCake'),
+                        subtitle: Text('CyaniAgent'),
                       ),
                       const ListTile(
                         leading: Icon(Icons.code),
                         title: Text('技术栈'),
-                        subtitle: Text('Flutter 3.38.5'),
+                        subtitle: Text('Flutter'),
                       ),
                       const ListTile(
                         leading: Icon(Icons.favorite),
@@ -70,7 +70,7 @@ class AboutPage extends StatelessWidget {
 
               // 版权信息
               const Text(
-                '© 2026 SakuraCake',
+                '© 2026 CyaniAgent',
                 style: TextStyle(color: Colors.grey),
               ),
             ],

@@ -135,15 +135,10 @@ class FlarumApi {
     );
 
     // 添加错误拦截器（处理WAF验证）
+    // 使用 QueuedInterceptorsWrapper 确保请求按顺序处理，避免并发请求同时触发验证
     _dio.interceptors.add(
-      InterceptorsWrapper(
+      QueuedInterceptorsWrapper(
         onError: (DioException e, ErrorInterceptorHandler handler) async {
-          logger.error(
-            'FlarumApi: 请求错误 - ${e.requestOptions.uri}',
-            e,
-            e.stackTrace,
-          );
-
           // 检查是否为WAF拦截（通常403或405，或者特定内容）
           // 阿里云ESA/LeiChi有时返回403
           if (e.response?.statusCode == 403) {
@@ -158,6 +153,7 @@ class FlarumApi {
 
               if (cookieValue != null) {
                 logger.debug('FlarumApi: WAF验证成功，添加Cookie');
+
                 // 验证成功，添加Cookie到CookieJar
                 final uri = Uri.parse(_baseUrl!);
                 final cookie = Cookie('acw_sc__v2', cookieValue)
@@ -174,8 +170,8 @@ class FlarumApi {
               } else {
                 logger.warning('FlarumApi: WAF验证失败或取消');
               }
-            } catch (e) {
-              logger.error('FlarumApi: WAF验证过程中发生错误', e);
+            } catch (err) {
+              logger.error('FlarumApi: WAF验证过程中发生错误', err);
               // 验证失败或取消
             }
           }

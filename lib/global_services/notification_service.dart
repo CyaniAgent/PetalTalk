@@ -6,8 +6,6 @@
 /// 3. 显示本地通知
 /// 4. 处理通知点击事件
 /// 5. 支持多平台（iOS、Android、Windows、macOS、Linux）
-library;
-
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_guid/flutter_guid.dart';
@@ -51,7 +49,7 @@ class GlobalNotificationService {
       final LinuxInitializationSettings initializationSettingsLinux =
           LinuxInitializationSettings(
             defaultActionName: 'Open notification',
-            defaultIcon: AssetsLinuxIcon('icons/app_icon.png'),
+            defaultIcon: AssetsLinuxIcon('assets/icons/logo.png'),
           );
       _logger.debug('Linux初始化设置创建完成');
 
