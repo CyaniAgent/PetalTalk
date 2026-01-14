@@ -40,15 +40,16 @@ class ServiceLocator {
     // 注册核心API服务（依赖CacheService，永久单例）
     Get.put(FlarumApi(), permanent: true);
 
-    // 注册状态管理服务（永久单例）
-    Get.put(UiMainController(), permanent: true);
-    Get.put(ProfileController(), permanent: true);
-
     // 注册非关键API服务（懒加载，只有在实际使用时才创建实例）
+    // 必须在控制器之前注册，因为控制器在初始化时会寻找这些服务
     Get.lazyPut(() => AuthService(), fenix: true);
     Get.lazyPut(() => DiscussionService(), fenix: true);
     Get.lazyPut(() => NotificationService(), fenix: true);
     Get.lazyPut(() => PostService(), fenix: true);
     Get.lazyPut(() => UserService(), fenix: true);
+
+    // 注册状态管理服务（永久单例）
+    Get.put(UiMainController(), permanent: true);
+    Get.put(ProfileController(), permanent: true);
   }
 }

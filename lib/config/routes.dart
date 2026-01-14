@@ -11,6 +11,7 @@ import '../ui/pages/setting_page.dart';
 import '../ui/pages/endpoint_selection_page.dart';
 import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
+import '../ui/pages/profile/my_account_page.dart';
 import '../ui/pages/log_viewer_page.dart';
 
 class AppRoutes {
@@ -64,5 +65,6 @@ final List<GetPage> appRoutes = [
   GetPage(name: AppRoutes.settings, page: () => const SettingPage()),
   GetPage(name: AppRoutes.endpoint, page: () => const EndpointSelectionPage()),
   GetPage(name: AppRoutes.notifications, page: () => const NotificationList()),
+  GetPage(name: '/profile', page: () => const MyAccountPage()),
   GetPage(name: AppRoutes.logs, page: () => const LogViewerPage()),
 ];

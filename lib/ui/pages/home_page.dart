@@ -17,7 +17,7 @@ import '../../utils/snackbar_utils.dart';
 import '../components/discussion/discussion_card.dart';
 import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
-import 'profile_page.dart';
+import 'profile/my_account_page.dart';
 import '../../state/main_state.dart';
 
 class DiscussionList extends StatefulWidget {
@@ -266,7 +266,7 @@ class _HomePageState extends State<HomePage> {
         'selectIcon': const Icon(Icons.person),
         'label': '我的',
         'count': 0,
-        'page': const ProfilePage(),
+        'page': const MyAccountPage(),
       },
     ];
   }
