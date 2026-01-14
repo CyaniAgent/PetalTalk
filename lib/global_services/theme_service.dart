@@ -57,14 +57,18 @@ class ThemeService {
     }
   }
 
-  /// 创建亮色主题
+  /// 通用主题构建方法，创建亮色或暗色主题
   ///
   /// 参数：
-  /// - lightDynamic: 系统提供的动态颜色方案（如果支持）
+  /// - dynamicColor: 系统提供的动态颜色方案（如果支持）
+  /// - brightness: 主题亮度（亮色或暗色）
   ///
   /// 返回值：
-  /// - `Future<ThemeData>`: 配置好的亮色主题
-  Future<ThemeData> createLightTheme(ColorScheme? lightDynamic) async {
+  /// - `Future<ThemeData>`: 配置好的主题
+  Future<ThemeData> _createTheme(
+    ColorScheme? dynamicColor,
+    Brightness brightness,
+  ) async {
     // 并行加载主题设置，提高性能
     final settings = await Future.wait([
       _appearanceService.loadUseDynamicColor(),
@@ -75,9 +79,9 @@ class ThemeService {
     final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);
 
-    final colorScheme = useDynamicColor && lightDynamic != null
-        ? lightDynamic
-        : ColorScheme.fromSeed(seedColor: accentColor);
+    final colorScheme = useDynamicColor && dynamicColor != null
+        ? dynamicColor
+        : ColorScheme.fromSeed(seedColor: accentColor, brightness: brightness);
 
     // 根据平台设置字体，Windows上优先使用Noto Sans SC
     final fontFamily = Platform.isWindows ? 'Noto Sans SC' : 'system';
@@ -90,6 +94,17 @@ class ThemeService {
     );
   }
 
+  /// 创建亮色主题
+  ///
+  /// 参数：
+  /// - lightDynamic: 系统提供的动态颜色方案（如果支持）
+  ///
+  /// 返回值：
+  /// - `Future<ThemeData>`: 配置好的亮色主题
+  Future<ThemeData> createLightTheme(ColorScheme? lightDynamic) async {
+    return _createTheme(lightDynamic, Brightness.light);
+  }
+
   /// 创建暗色主题
   ///
   /// 参数：
@@ -98,32 +113,7 @@ class ThemeService {
   /// 返回值：
   /// - `Future<ThemeData>`: 配置好的暗色主题
   Future<ThemeData> createDarkTheme(ColorScheme? darkDynamic) async {
-    // 并行加载主题设置，提高性能
-    final settings = await Future.wait([
-      _appearanceService.loadUseDynamicColor(),
-      _appearanceService.loadAccentColor(),
-    ]);
-
-    final useDynamicColor = settings[0] as bool;
-    final accentColorName = settings[1] as String;
-    final accentColor = getAccentColor(accentColorName);
-
-    final colorScheme = useDynamicColor && darkDynamic != null
-        ? darkDynamic
-        : ColorScheme.fromSeed(
-            seedColor: accentColor,
-            brightness: Brightness.dark,
-          );
-
-    // 根据平台设置字体，Windows上优先使用Noto Sans SC
-    final fontFamily = Platform.isWindows ? 'Noto Sans SC' : 'system';
-
-    return ThemeData(
-      colorScheme: colorScheme,
-      useMaterial3: true,
-      fontFamily: fontFamily,
-      appBarTheme: const AppBarTheme(elevation: 0),
-    );
+    return _createTheme(darkDynamic, Brightness.dark);
   }
 
   /// 加载主题模式

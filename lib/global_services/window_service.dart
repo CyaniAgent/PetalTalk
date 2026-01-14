@@ -12,6 +12,7 @@ library;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import '/core/logger.dart';
 
 /// 窗口服务类，提供跨平台窗口管理功能
 class WindowService {
@@ -32,8 +33,10 @@ class WindowService {
       try {
         // 使用try-catch包裹所有可能的调用
         await windowManager.ensureInitialized();
+        logger.info('窗口管理器初始化成功');
       } catch (_) {
         // 忽略任何异常
+        logger.error('窗口管理器初始化失败');
       }
     }
   }
@@ -48,7 +51,7 @@ class WindowService {
     if (isDesktop) {
       try {
         WindowOptions windowOptions = WindowOptions(
-          minimumSize: const Size(800, 600),
+          //minimumSize: const Size(800, 600),
           size: const Size(1300, 800),
           title: 'PetalTalk',
           center: true,
@@ -61,11 +64,11 @@ class WindowService {
             await windowManager.show();
             await windowManager.focus();
           } catch (_) {
-            // 忽略任何异常
+            logger.error('窗口显示或聚焦失败');
           }
         });
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口设置失败');
       }
     }
   }
@@ -78,7 +81,7 @@ class WindowService {
       try {
         await windowManager.minimize();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口最小化失败');
       }
     }
   }
@@ -91,7 +94,7 @@ class WindowService {
       try {
         await windowManager.maximize();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口最大化失败');
       }
     }
   }
@@ -104,7 +107,7 @@ class WindowService {
       try {
         await windowManager.restore();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口还原失败');
       }
     }
   }
@@ -125,7 +128,7 @@ class WindowService {
           await windowManager.maximize();
         }
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口最大化/还原失败');
       }
     }
   }
@@ -141,7 +144,7 @@ class WindowService {
       try {
         return await windowManager.isMaximized();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('检查窗口最大化状态失败');
       }
     }
     return false;
@@ -155,7 +158,7 @@ class WindowService {
       try {
         await windowManager.startDragging();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口拖动失败');
       }
     }
   }
@@ -168,7 +171,7 @@ class WindowService {
       try {
         await windowManager.close();
       } catch (_) {
-        // 忽略任何异常
+        logger.error('窗口关闭失败');
       }
     }
   }
