@@ -6,6 +6,8 @@
 /// 3. 显示本地通知
 /// 4. 处理通知点击事件
 /// 5. 支持多平台（iOS、Android、Windows、macOS、Linux）
+library;
+
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_guid/flutter_guid.dart';

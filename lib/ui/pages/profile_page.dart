@@ -125,9 +125,11 @@ class ProfilePage extends GetView<ProfileController> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: color.a * 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: color.withOpacity(0.5)),
+                        border: Border.all(
+                          color: color.withValues(alpha: color.a * 0.5),
+                        ),
                       ),
                       child: Text(
                         group['nameSingular'],

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../components/setting/setting_panel.dart';
 import '../../api/services/auth_service.dart';
 import '../../api/flarum_api.dart';
 import '../../core/logger.dart';
+import 'license_page.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -683,10 +683,10 @@ class _SettingPageState extends State<SettingPage> {
               },
             ),
             ListTile(
-              title: const Text('关于我们'),
+              title: const Text('许可证信息'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                Get.toNamed('/about');
+                Get.to(() => const AppLicensePage());
               },
             ),
           ],

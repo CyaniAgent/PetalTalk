@@ -13,6 +13,7 @@ import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
 import '../ui/pages/profile/my_account_page.dart';
 import '../ui/pages/log_viewer_page.dart';
+import '../ui/pages/license_page.dart';
 
 class AppRoutes {
   /// 初始路由
@@ -47,6 +48,9 @@ class AppRoutes {
 
   /// 日志查看页
   static const String logs = '/logs';
+
+  /// 许可证页
+  static const String license = '/license';
 }
 
 /// 路由配置列表
@@ -67,4 +71,5 @@ final List<GetPage> appRoutes = [
   GetPage(name: AppRoutes.notifications, page: () => const NotificationList()),
   GetPage(name: '/profile', page: () => const MyAccountPage()),
   GetPage(name: AppRoutes.logs, page: () => const LogViewerPage()),
+  GetPage(name: AppRoutes.license, page: () => const AppLicensePage()),
 ];

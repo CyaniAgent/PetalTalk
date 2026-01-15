@@ -5,6 +5,8 @@
 /// 2. 控制台和文件双输出
 /// 3. 动态日志级别调整
 /// 4. 日志文件管理（大小限制、清理等）
+library;
+
 import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
