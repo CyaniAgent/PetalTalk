@@ -20,7 +20,10 @@ class ProfileController extends GetxController {
   }
 
   Future<void> fetchProfile() async {
-    if (!_authService.isLoggedIn()) return;
+    if (!_authService.isLoggedIn()) {
+      logger.info('ProfileController: 用户未登录，跳过获取个人资料');
+      return;
+    }
 
     isLoading.value = true;
     error.value = null;
@@ -28,19 +31,32 @@ class ProfileController extends GetxController {
     try {
       final userId = await _authService.getCurrentUserId();
       if (userId == null) {
-        error.value = '无法获取当前用户ID';
+        logger.warning('ProfileController: 即使已登录也无法获取用户ID');
+        error.value = '获取用户信息失败：未找到用户ID';
         return;
       }
 
+      logger.info('ProfileController: 正在为用户 $userId 获取个人资料');
+
       final data = await _userService.getUserProfile(userId);
+
       if (data != null && data.containsKey('data')) {
         final userData = data['data'];
-        user.value = User.fromJson(userData);
+        logger.debug('ProfileController: 成功获取用户原始数据: $userData');
+
+        try {
+          user.value = User.fromJson(userData);
+          logger.info('ProfileController: 成功解析用户: ${user.value?.username}');
+        } catch (parseError) {
+          logger.error('ProfileController: 解析用户数据失败', parseError);
+          error.value = '解析用户信息失败';
+          return;
+        }
 
         // 处理包含的组信息
         if (data.containsKey('included')) {
           final List<dynamic> included = data['included'];
-          groups.value = included
+          final groupItems = included
               .where((item) => item['type'] == 'groups')
               .map(
                 (item) => {
@@ -52,13 +68,16 @@ class ProfileController extends GetxController {
                 },
               )
               .toList();
+          groups.value = groupItems;
+          logger.info('ProfileController: 成功加载 ${groups.length} 个用户组');
         }
       } else {
-        error.value = '加载用户信息失败';
+        logger.warning('ProfileController: API响应中没有数据或响应为空: $data');
+        error.value = '加载用户信息失败：服务器未返回数据';
       }
     } catch (e, stackTrace) {
-      logger.error('ProfileController fetchProfile 出错', e, stackTrace);
-      error.value = '发生未知错误: $e';
+      logger.error('ProfileController: fetchProfile 发生严重错误', e, stackTrace);
+      error.value = '发生错误: $e';
     } finally {
       isLoading.value = false;
     }

@@ -124,17 +124,16 @@ flutter:
   # 要向应用程序添加自定义字体，请在此处的"flutter"部分添加一个fonts部分。
   # 此列表中的每个条目都应包含一个带有字体系列名称的"family"键，以及一个带有
   # 字体资产和其他描述符列表的"fonts"键。例如：
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+  fonts:
+    - family: Google Sans
+      fonts:
+        - asset: assets/fonts/GoogleSans.ttf
+    - family: MiSans
+      fonts:
+        - asset: assets/fonts/MiSans.ttf
+    - family: Star Rail Font
+      fonts:
+        - asset: assets/fonts/StarRailFont.ttf
   #
   # 有关包依赖项字体的详细信息，
   # 请参阅https://flutter.dev/to/font-from-package

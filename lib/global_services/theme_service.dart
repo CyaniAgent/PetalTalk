@@ -7,7 +7,6 @@
 /// 4. 强调色管理
 library;
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 
 import './appearance_service.dart';
@@ -73,18 +72,17 @@ class ThemeService {
     final settings = await Future.wait([
       _appearanceService.loadUseDynamicColor(),
       _appearanceService.loadAccentColor(),
+      _appearanceService.loadFontFamily(),
     ]);
 
     final useDynamicColor = settings[0] as bool;
     final accentColorName = settings[1] as String;
     final accentColor = getAccentColor(accentColorName);
+    final String fontFamily = settings[2] as String;
 
     final colorScheme = useDynamicColor && dynamicColor != null
         ? dynamicColor
         : ColorScheme.fromSeed(seedColor: accentColor, brightness: brightness);
-
-    // 根据平台设置字体，Windows上优先使用Noto Sans SC
-    final fontFamily = Platform.isWindows ? 'Noto Sans SC' : 'system';
 
     return ThemeData(
       colorScheme: colorScheme,

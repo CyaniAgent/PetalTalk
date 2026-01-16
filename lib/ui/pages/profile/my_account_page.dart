@@ -16,6 +16,11 @@ class MyAccountPage extends GetView<ProfileController> {
           return const Center(child: LoadingIndicatorM3E());
         }
 
+        // 优先处理错误状态，如果已登录但加载失败
+        if (controller.error.value != null) {
+          return _buildErrorView(context, controller.error.value!);
+        }
+
         final user = controller.user.value;
         if (user == null) {
           return _buildNotLoggedIn(context);
@@ -33,6 +38,42 @@ class MyAccountPage extends GetView<ProfileController> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, String errorMessage) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 80, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(
+              '加载失败',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              errorMessage,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: controller.fetchProfile,
+              icon: const Icon(Icons.refresh),
+              label: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
