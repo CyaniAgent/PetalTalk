@@ -5,18 +5,34 @@ import '../../state/profile_controller.dart';
 import '../../state/main_state.dart';
 import '../../utils/snackbar_utils.dart';
 
-class ProfilePage extends GetView<ProfileController> {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final ProfileController _controller = Get.isRegistered<ProfileController>() 
+      ? Get.find<ProfileController>() 
+      : Get.put(ProfileController());
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化时刷新用户数据
+    _controller.fetchProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() {
-        if (controller.isLoading.value) {
+        if (_controller.isLoading.value) {
           return const Center(child: LoadingIndicatorM3E());
         }
 
-        final user = controller.user.value;
+        final user = _controller.user.value;
         if (user == null) {
           return _buildNotLoggedIn();
         }
@@ -113,7 +129,7 @@ class ProfilePage extends GetView<ProfileController> {
                 // 组勋章
                 Wrap(
                   spacing: 4,
-                  children: controller.groups.map((group) {
+                  children: _controller.groups.map((group) {
                     final color = group['color'] != null
                         ? Color(
                             int.parse(group['color'].replaceFirst('#', '0xFF')),
@@ -241,7 +257,7 @@ class ProfilePage extends GetView<ProfileController> {
   }
 
   void _handleLogout() {
-    controller.logout();
+    _controller.logout();
     SnackbarUtils.showSnackbar('已退出登录');
     final mainController = Get.find<UiMainController>();
     mainController.setSelectedIndex(0);

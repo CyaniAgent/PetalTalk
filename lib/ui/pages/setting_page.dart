@@ -1,3 +1,9 @@
+/// 设置页面，用于管理应用的各种设置选项
+///
+/// 该页面包含账号设置、端点管理、通知设置、外观设置、语言设置、
+/// 帮助与反馈、日志设置、API请求设置和数据管理等功能。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../global_services/appearance_service.dart';
@@ -8,31 +14,65 @@ import '../../api/flarum_api.dart';
 import '../../core/logger.dart';
 import 'license_page.dart';
 
+/// 设置页面的主组件
 class SettingPage extends StatefulWidget {
+  /// 创建设置页面实例
   const SettingPage({super.key});
 
   @override
   State<SettingPage> createState() => _SettingPageState();
 }
 
+/// 设置页面的状态管理类
 class _SettingPageState extends State<SettingPage> {
+  /// 日志记录器实例
   final AppLogger _logger = AppLogger();
+
+  /// 外观服务实例，用于管理应用外观设置
   final AppearanceService _appearanceService = AppearanceService();
+
+  /// API客户端实例，用于管理应用端点
   final FlarumApi _api = FlarumApi();
 
-  // 使用Rx变量实现响应式状态管理
+  /// 使用Rx变量实现响应式状态管理
+
+  /// 深色模式开关状态
   final RxBool _isDarkMode = false.obs;
+
+  /// 动态色彩开关状态
   final RxBool _useDynamicColor = true.obs;
+
+  /// 当前选择的强调色
   final RxString _accentColor = 'blue'.obs;
+
+  /// 是否启用所有通知
   final RxBool _enableNotifications = true.obs;
+
+  /// 是否启用消息通知
   final RxBool _enableMessageNotifications = true.obs;
+
+  /// 是否启用提及通知
   final RxBool _enableMentionNotifications = true.obs;
+
+  /// 是否启用回复通知
   final RxBool _enableReplyNotifications = true.obs;
+
+  /// 是否启用系统通知
   final RxBool _enableSystemNotifications = true.obs;
+
+  /// 当前日志级别
   final RxString _logLevel = 'error'.obs;
+
+  /// 最大日志大小（MB）
   final RxInt _maxLogSize = 10.obs;
+
+  /// 是否启用日志导出
   final RxBool _enableLogExport = true.obs;
+
+  /// 是否使用浏览器请求头
   final RxBool _useBrowserHeaders = true.obs;
+
+  /// 当前选择的字体系列
   final RxString _fontFamily = 'Google Sans'.obs;
 
   @override
@@ -491,7 +531,12 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
-  // 构建颜色选择项
+  /// 构建颜色选择项组件
+  ///
+  /// [colorName] - 颜色名称
+  /// [color] - 对应的Color对象
+  ///
+  /// 返回一个可点击的颜色选择组件，选中时显示勾选图标
   Widget _buildColorOption(String colorName, Color color) {
     final isSelected = _accentColor.value == colorName;
     return GestureDetector(
@@ -515,7 +560,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 显示强调色选择对话框
+  /// 显示强调色选择对话框
+  ///
+  /// 显示一个包含多种颜色选项的网格，用户可以选择应用的强调色
   void _showAccentColorDialog() {
     _logger.debug('显示强调色选择对话框');
     showDialog(
@@ -552,7 +599,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 显示字体选择对话框
+  /// 显示字体选择对话框
+  ///
+  /// 显示一个包含多种字体选项的单选列表，用户可以选择应用的字体
   void _showFontFamilyDialog() {
     _logger.debug('显示字体选择对话框');
     final List<String> fonts = ['Google Sans', 'MiSans', 'Star Rail Font'];
@@ -589,7 +638,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建账号设置内容
+  /// 构建账号设置内容
+  ///
+  /// 包含个人资料、密码修改和绑定邮箱等账号相关设置
   Widget _buildAccountSettings() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -622,7 +673,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建端点管理内容
+  /// 构建端点管理内容
+  ///
+  /// 包含当前端点信息、添加新端点和管理已保存端点等功能
   Widget _buildEndpointSettings() {
     return FutureBuilder<List<String>>(
       future: _api.getEndpoints(),
@@ -748,7 +801,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建通知设置内容
+  /// 构建通知设置内容
+  ///
+  /// 包含总通知开关和各种类型通知的单独开关
   Widget _buildNotificationSettings() {
     return Obx(
       () => ListView(
@@ -798,7 +853,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建外观设置内容
+  /// 构建外观设置内容
+  ///
+  /// 包含深色模式、动态色彩、强调色和字体设置等功能
   Widget _buildAppearanceSettings() {
     return Obx(
       () => ListView(
@@ -844,7 +901,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建帮助与反馈内容
+  /// 构建帮助与反馈内容
+  ///
+  /// 包含常见问题、使用教程、反馈问题和开源许可证等链接
   Widget _buildHelpSettings() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -881,7 +940,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建日志设置内容
+  /// 构建日志设置内容
+  ///
+  /// 包含日志管理、日志级别设置、最大日志大小设置和日志导出开关等功能
   Widget _buildLogSettings() {
     return Obx(
       () => ListView(
@@ -894,10 +955,7 @@ class _SettingPageState extends State<SettingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '日志管理',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('日志管理', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 8,
@@ -937,10 +995,7 @@ class _SettingPageState extends State<SettingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '日志级别',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('日志级别', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
                     '设置日志记录的详细程度',
@@ -1037,7 +1092,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建API请求设置内容
+  /// 构建API请求设置内容
+  ///
+  /// 包含使用浏览器请求头等API相关设置
   Widget _buildApiSettings() {
     return Obx(
       () => ListView(
@@ -1055,7 +1112,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建数据管理内容
+  /// 构建数据管理内容
+  ///
+  /// 包含删除所有数据等数据管理功能
   Widget _buildDataSettings() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -1067,10 +1126,7 @@ class _SettingPageState extends State<SettingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '删除所有数据',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('删除所有数据', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 const Text('此操作将删除所有端点的数据并退出登录，不可恢复。'),
                 const SizedBox(height: 16),
@@ -1133,7 +1189,9 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
-  // 构建所有设置项列表
+  /// 构建所有设置项列表
+  ///
+  /// 返回一个包含所有设置面板的列表，每个设置面板包含标题、图标和内容组件
   List<Map<String, dynamic>> _buildSettingItems() {
     return [
       {
@@ -1161,11 +1219,7 @@ class _SettingPageState extends State<SettingPage> {
         'title': '帮助与反馈',
         'content': _buildHelpSettings(),
       },
-      {
-        'icon': Icons.history,
-        'title': '日志设置',
-        'content': _buildLogSettings(),
-      },
+      {'icon': Icons.history, 'title': '日志设置', 'content': _buildLogSettings()},
       {
         'icon': Icons.cloud_upload,
         'title': 'API请求设置',

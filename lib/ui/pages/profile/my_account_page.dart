@@ -5,29 +5,45 @@ import '../../../state/profile_controller.dart';
 import '../../../state/main_state.dart';
 import '../../../utils/snackbar_utils.dart';
 
-class MyAccountPage extends GetView<ProfileController> {
+class MyAccountPage extends StatefulWidget {
   const MyAccountPage({super.key});
+
+  @override
+  State<MyAccountPage> createState() => _MyAccountPageState();
+}
+
+class _MyAccountPageState extends State<MyAccountPage> {
+  final ProfileController _controller = Get.isRegistered<ProfileController>() 
+      ? Get.find<ProfileController>() 
+      : Get.put(ProfileController());
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化时刷新用户数据
+    _controller.fetchProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() {
-        if (controller.isLoading.value) {
+        if (_controller.isLoading.value) {
           return const Center(child: LoadingIndicatorM3E());
         }
 
         // 优先处理错误状态，如果已登录但加载失败
-        if (controller.error.value != null) {
-          return _buildErrorView(context, controller.error.value!);
+        if (_controller.error.value != null) {
+          return _buildErrorView(context, _controller.error.value!);
         }
 
-        final user = controller.user.value;
+        final user = _controller.user.value;
         if (user == null) {
           return _buildNotLoggedIn(context);
         }
 
         return RefreshIndicator(
-          onRefresh: controller.fetchProfile,
+          onRefresh: _controller.fetchProfile,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -67,7 +83,7 @@ class MyAccountPage extends GetView<ProfileController> {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: controller.fetchProfile,
+              onPressed: _controller.fetchProfile,
               icon: const Icon(Icons.refresh),
               label: const Text('重试'),
             ),
@@ -158,7 +174,7 @@ class MyAccountPage extends GetView<ProfileController> {
                 spacing: 6,
                 runSpacing: 6,
                 alignment: WrapAlignment.center,
-                children: controller.groups.map<Widget>((group) {
+                children: _controller.groups.map<Widget>((group) {
                   final color = group['color'] != null
                       ? Color(
                           int.parse(group['color'].replaceFirst('#', '0xFF')),
@@ -371,7 +387,7 @@ class MyAccountPage extends GetView<ProfileController> {
   }
 
   void _handleLogout() {
-    controller.logout();
+    _controller.logout();
     SnackbarUtils.showSnackbar('已退出登录');
     final mainController = Get.find<UiMainController>();
     mainController.setSelectedIndex(0);
