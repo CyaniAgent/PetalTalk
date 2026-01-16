@@ -19,6 +19,7 @@ class Constants {
   static const String fontSizeKey = 'font_size';
   static const String compactLayoutKey = 'compact_layout';
   static const String showAvatarsKey = 'show_avatars';
+  static const String fontFamilyKey = 'font_family';
 
   // 通知相关存储键
   static const String enableNotificationsKey = 'enable_notifications';
@@ -50,6 +51,7 @@ class Constants {
   static const bool defaultEnableNotifications = true;
   static const bool defaultUseDynamicColor = true;
   static const String defaultAccentColor = 'blue';
+  static const String defaultFontFamily = 'Google Sans';
 
   // 布局偏好
   static const String layoutPreferenceKey = 'layout_preference';
@@ -61,7 +63,7 @@ class Constants {
   static const String defaultLogLevel = 'error';
   static const int defaultMaxLogSize = 10; // MB
   static const bool defaultEnableLogExport = true;
-  
+
   // API请求相关
   static const String useBrowserHeadersKey = 'use_browser_headers';
   static const bool defaultUseBrowserHeaders = true;

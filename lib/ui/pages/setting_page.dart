@@ -33,6 +33,7 @@ class _SettingPageState extends State<SettingPage> {
   final RxInt _maxLogSize = 10.obs;
   final RxBool _enableLogExport = true.obs;
   final RxBool _useBrowserHeaders = true.obs;
+  final RxString _fontFamily = 'Google Sans'.obs;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _SettingPageState extends State<SettingPage> {
         _appearanceService.loadMaxLogSize(),
         _appearanceService.loadEnableLogExport(),
         _appearanceService.loadUseBrowserHeaders(),
+        _appearanceService.loadFontFamily(),
       ]);
 
       // 直接更新Rx变量的值，不需要setState
@@ -81,6 +83,7 @@ class _SettingPageState extends State<SettingPage> {
       _maxLogSize.value = settings[9] as int;
       _enableLogExport.value = settings[10] as bool;
       _useBrowserHeaders.value = settings[11] as bool;
+      _fontFamily.value = settings[12] as String;
 
       _logger.info(
         '当前设置加载完成: 深色模式 = ${_isDarkMode.value}, 动态色彩 = ${_useDynamicColor.value}, 强调色 = ${_accentColor.value}, 通知启用 = ${_enableNotifications.value}',
@@ -166,6 +169,21 @@ class _SettingPageState extends State<SettingPage> {
     } catch (e, stackTrace) {
       _logger.error('更新强调色出错', e, stackTrace);
       SnackbarUtils.showSnackbar('更新强调色失败', type: SnackbarType.error);
+    }
+  }
+
+  // 更新字体系列
+  Future<void> _updateFontFamily(String value) async {
+    _logger.debug('更新字体系列: $value');
+    try {
+      await _appearanceService.saveFontFamily(value);
+      _fontFamily.value = value;
+      // 重新加载主题设置
+      _loadThemeSettings();
+      _logger.info('字体系列更新成功: $value');
+    } catch (e, stackTrace) {
+      _logger.error('更新字体系列出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('更新字体系列失败', type: SnackbarType.error);
     }
   }
 
@@ -501,6 +519,46 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
+  // 显示字体选择对话框
+  void _showFontFamilyDialog() {
+    _logger.debug('显示字体选择对话框');
+    final List<String> fonts = ['Google Sans', 'MiSans', 'Star Rail Font'];
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('选择字体'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: fonts.length,
+              itemBuilder: (context, index) {
+                final font = fonts[index];
+                return Obx(
+                  () => RadioListTile<String>(
+                    title: Text(font, style: TextStyle(fontFamily: font)),
+                    value: font,
+                    groupValue: _fontFamily.value,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _updateFontFamily(value);
+                        Get.back();
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AuthService authService = Get.find<AuthService>();
@@ -625,6 +683,12 @@ class _SettingPageState extends State<SettingPage> {
                     ? null
                     : () => _showAccentColorDialog(),
                 enabled: !_useDynamicColor.value,
+              ),
+              ListTile(
+                title: const Text('字体设置'),
+                subtitle: Obx(() => Text('当前字体: ${_fontFamily.value}')),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showFontFamilyDialog(),
               ),
             ],
           ),

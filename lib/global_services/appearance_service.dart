@@ -21,6 +21,7 @@ class AppearanceService {
       Constants.enableReplyNotificationsKey;
   static const String _enableSystemNotificationsKey =
       Constants.enableSystemNotificationsKey;
+  static const String _fontFamilyKey = Constants.fontFamilyKey;
 
   // 加载主题模式
   Future<ThemeMode> loadThemeMode() async {
@@ -185,6 +186,27 @@ class AppearanceService {
     _logger.info('保存强调色设置完成: $accentColor');
   }
 
+  // 加载字体系列
+  Future<String> loadFontFamily() async {
+    _logger.debug('开始加载字体系列设置');
+    final prefs = await SharedPreferences.getInstance();
+    final result = _safeGetString(
+      prefs,
+      _fontFamilyKey,
+      Constants.defaultFontFamily,
+    );
+    _logger.info('加载字体系列设置完成: $result');
+    return result;
+  }
+
+  // 保存字体系列
+  Future<void> saveFontFamily(String fontFamily) async {
+    _logger.debug('开始保存字体系列设置: $fontFamily');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_fontFamilyKey, fontFamily);
+    _logger.info('保存字体系列设置完成: $fontFamily');
+  }
+
   // 加载是否启用通知
   Future<bool> loadEnableNotifications() async {
     _logger.debug('开始加载全局通知设置');
@@ -291,7 +313,8 @@ class AppearanceService {
   Future<int> loadMaxLogSize() async {
     _logger.debug('开始加载最大日志大小设置');
     final prefs = await SharedPreferences.getInstance();
-    final result = prefs.getInt(Constants.maxLogSizeKey) ?? Constants.defaultMaxLogSize;
+    final result =
+        prefs.getInt(Constants.maxLogSizeKey) ?? Constants.defaultMaxLogSize;
     _logger.info('加载最大日志大小设置完成: $result');
     return result;
   }
