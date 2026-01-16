@@ -31,7 +31,7 @@ class _VerificationWindowState extends State<VerificationWindow> {
 
   Timer? _cookieTimer;
   bool _isWebviewInitialized = false;
-  bool _isWindows = Platform.isWindows;
+  final bool _isWindows = Platform.isWindows;
 
   @override
   void initState() {
