@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:webview_windows/webview_windows.dart';
+import 'package:webview_windows/webview_windows.dart' as windows;
+import 'package:webview_flutter/webview_flutter.dart' as mobile;
 import 'package:get/get.dart';
 
 class VerificationWindow extends StatefulWidget {
@@ -22,58 +24,103 @@ class VerificationWindow extends StatefulWidget {
 }
 
 class _VerificationWindowState extends State<VerificationWindow> {
-  final _controller = WebviewController();
+  // Desktop controller
+  late windows.WebviewController _windowsController;
+  // Mobile controller
+  late mobile.WebViewController _mobileController;
+
   Timer? _cookieTimer;
   bool _isWebviewInitialized = false;
+  bool _isWindows = Platform.isWindows;
 
   @override
   void initState() {
     super.initState();
-    _initWebview();
+    if (_isWindows) {
+      _initWindowsWebview();
+    } else {
+      _initMobileWebview();
+    }
   }
 
-  Future<void> _initWebview() async {
+  Future<void> _initWindowsWebview() async {
+    _windowsController = windows.WebviewController();
     try {
-      await _controller.initialize();
-      await _controller.setBackgroundColor(Colors.transparent);
-      await _controller.setPopupWindowPolicy(WebviewPopupWindowPolicy.deny);
+      await _windowsController.initialize();
+      await _windowsController.setBackgroundColor(Colors.transparent);
+      await _windowsController.setPopupWindowPolicy(
+        windows.WebviewPopupWindowPolicy.deny,
+      );
 
       if (!mounted) return;
       setState(() {
         _isWebviewInitialized = true;
       });
 
-      await _controller.loadUrl(widget.url);
+      await _windowsController.loadUrl(widget.url);
 
       // Start checking for the verification cookie
       _startCookieCheck();
     } catch (e) {
-      // Handle initialization error (e.g., runtime not installed)
       if (mounted) {
-        Get.back(); // Close dialog on error
+        Get.back();
       }
     }
   }
 
+  Future<void> _initMobileWebview() async {
+    _mobileController = mobile.WebViewController()
+      ..setJavaScriptMode(mobile.JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        mobile.NavigationDelegate(
+          onPageFinished: (String url) {
+            _startCookieCheck();
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+
+    if (!mounted) return;
+    setState(() {
+      _isWebviewInitialized = true;
+    });
+  }
+
   void _startCookieCheck() {
-    _cookieTimer = Timer.periodic(const Duration(milliseconds: 500), (
+    _cookieTimer?.cancel();
+    _cookieTimer = Timer.periodic(const Duration(milliseconds: 1000), (
       timer,
     ) async {
-      if (!_controller.value.isInitialized) return;
-
       try {
-        // webview_windows doesn't support getCookies, use JS to get document.cookie
-        final cookiesString = await _controller.executeScript(
-          'document.cookie',
-        );
+        String? cookiesString;
+        if (_isWindows) {
+          if (!_windowsController.value.isInitialized) return;
+          cookiesString = await _windowsController.executeScript(
+            'document.cookie',
+          );
+        } else {
+          cookiesString =
+              await _mobileController.runJavaScriptReturningResult(
+                    'document.cookie',
+                  )
+                  as String?;
+          // mobile returns quoted string sometimes
+          if (cookiesString != null &&
+              cookiesString.startsWith('"') &&
+              cookiesString.endsWith('"')) {
+            cookiesString = cookiesString.substring(
+              1,
+              cookiesString.length - 1,
+            );
+          }
+        }
 
         if (cookiesString != null && cookiesString.isNotEmpty) {
-          // Parse "key=value; key2=value2"
-          final cookies = cookiesString.toString().split(';');
+          final cookies = cookiesString.split(';');
           for (final cookie in cookies) {
             final parts = cookie.trim().split('=');
             if (parts.isNotEmpty && parts[0] == 'acw_sc__v2') {
-              // Found it!
               if (parts.length > 1) {
                 _onVerificationSuccess(parts[1]);
                 return;
@@ -97,28 +144,30 @@ class _VerificationWindowState extends State<VerificationWindow> {
   @override
   void dispose() {
     _cookieTimer?.cancel();
-    _controller.dispose();
+    if (_isWindows) {
+      _windowsController.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 桌面端建议给一个合适的大小
     return Center(
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         elevation: 8,
         child: Container(
-          width: 800,
-          height: 600,
+          width: _isWindows ? 800 : double.infinity,
+          height: _isWindows ? 600 : double.infinity,
+          margin: _isWindows ? EdgeInsets.zero : const EdgeInsets.all(16),
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
           child: Column(
             children: [
               // Title Bar
               Container(
-                height: 40,
+                height: 48,
                 color: Colors.grey[200],
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -129,9 +178,7 @@ class _VerificationWindowState extends State<VerificationWindow> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.close),
                       onPressed: () => Get.back(),
                     ),
                   ],
@@ -140,7 +187,9 @@ class _VerificationWindowState extends State<VerificationWindow> {
               // WebView Area
               Expanded(
                 child: _isWebviewInitialized
-                    ? Webview(_controller)
+                    ? (_isWindows
+                          ? windows.Webview(_windowsController)
+                          : mobile.WebViewWidget(controller: _mobileController))
                     : const Center(child: CircularProgressIndicator()),
               ),
             ],
