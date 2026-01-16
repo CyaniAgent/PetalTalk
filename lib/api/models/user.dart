@@ -36,23 +36,24 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final attrs = json['attributes'] ?? {};
     return User(
-      id: json['id'],
-      username: json['attributes']['username'],
-      displayName: json['attributes']['displayName'],
-      avatarUrl: json['attributes']['avatarUrl'],
-      slug: json['attributes']['slug'],
-      joinTime: json['attributes']['joinTime'],
-      discussionCount: json['attributes']['discussionCount'],
-      commentCount: json['attributes']['commentCount'],
-      canEdit: json['attributes']['canEdit'],
-      canEditCredentials: json['attributes']['canEditCredentials'],
-      canEditGroups: json['attributes']['canEditGroups'],
-      canDelete: json['attributes']['canDelete'],
-      lastSeenAt: json['attributes']['lastSeenAt'],
-      isEmailConfirmed: json['attributes']['isEmailConfirmed'],
-      isAdmin: json['attributes']['isAdmin'],
-      preferences: json['attributes']['preferences'],
+      id: json['id'] ?? '',
+      username: attrs['username'] ?? 'unknown',
+      displayName: attrs['displayName'] ?? attrs['username'] ?? '未知用户',
+      avatarUrl: attrs['avatarUrl'],
+      slug: attrs['slug'] ?? '',
+      joinTime: attrs['joinTime'] ?? DateTime.now().toIso8601String(),
+      discussionCount: attrs['discussionCount'] ?? 0,
+      commentCount: attrs['commentCount'] ?? 0,
+      canEdit: attrs['canEdit'] ?? false,
+      canEditCredentials: attrs['canEditCredentials'] ?? false,
+      canEditGroups: attrs['canEditGroups'] ?? false,
+      canDelete: attrs['canDelete'] ?? false,
+      lastSeenAt: attrs['lastSeenAt'],
+      isEmailConfirmed: attrs['isEmailConfirmed'] ?? false,
+      isAdmin: attrs['isAdmin'] ?? false,
+      preferences: attrs['preferences'] ?? {},
     );
   }
 }
