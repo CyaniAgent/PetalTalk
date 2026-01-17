@@ -12,7 +12,7 @@ import '../../utils/time_formatter.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../core/cache_service.dart';
 import '../components/discussion/post_content.dart';
-import '../components/discussion/reply_input.dart';
+import '../components/discussion/discussion_input.dart';
 
 class DiscussionDetailPage extends StatefulWidget {
   const DiscussionDetailPage({super.key});
@@ -27,8 +27,6 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
   Discussion? _discussion;
   final List<Post> _posts = [];
   bool _isLoading = false;
-  bool _isSubmittingReply = false;
-  String _replyContent = '';
   // 存储用户信息，key是userId，value是用户名
   final Map<String, String> _users = {};
   // 存储用户头像，key是userId，value是头像URL
@@ -289,122 +287,45 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
     }
   }
 
+  // This method is needed for the new _showReplyBottomSheet logic
+  Future<void> _handleRefresh() async {
+    if (_discussion != null) {
+      _posts.clear(); // Clear existing posts
+      await _loadDiscussionDetail(
+        _discussion!.id,
+      ); // Reload discussion and posts
+    }
+  }
+
   // 显示底部回复输入框
   void _showReplyBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标题
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '写下你的回复',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      Get.back();
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // 回复输入框
-              ReplyInput(
-                onSubmit: () {
-                  // 提交回复后关闭弹窗
-                  Get.back();
-                  _handleReply();
-                },
-                onContentChanged: (content) {
-                  setState(() {
-                    _replyContent = content;
-                  });
-                },
-                initialContent: _replyContent,
-                isSubmitting: _isSubmittingReply,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DiscussionInput(
+          showTitle: false,
+          submitLabel: '发布回复',
+          onSubmit: (title, content) async {
+            if (_discussion == null) return;
 
-  // 处理回复
-  Future<void> _handleReply() async {
-    if (_replyContent.isEmpty || _discussion == null) return;
+            final result = await _postService.replyToDiscussion(
+              discussionId: _discussion!.id,
+              content: content,
+            );
 
-    if (mounted) {
-      setState(() {
-        _isSubmittingReply = true;
-      });
-    }
-
-    final result = await _postService.replyToDiscussion(
-      discussionId: _discussion!.id,
-      content: _replyContent,
-    );
-
-    // 检查组件是否仍然挂载
-    if (!mounted) return;
-
-    setState(() {
-      _isSubmittingReply = false;
-    });
-
-    if (result != null) {
-      // 回复成功，添加到帖子列表
-      final post = Post.fromJson(result['data']);
-      setState(() {
-        _posts.add(post);
-        _replyContent = '';
-      });
-
-      // 更新主题帖的评论数
-      setState(() {
-        _discussion = Discussion(
-          id: _discussion!.id,
-          title: _discussion!.title,
-          slug: _discussion!.slug,
-          commentCount: _discussion!.commentCount + 1,
-          participantCount: _discussion!.participantCount,
-          createdAt: _discussion!.createdAt,
-          lastPostedAt: DateTime.now().toIso8601String(),
-          lastPostNumber: _discussion!.lastPostNumber + 1,
-          canReply: _discussion!.canReply,
-          canRename: _discussion!.canRename,
-          canDelete: _discussion!.canDelete,
-          canHide: _discussion!.canHide,
-          isHidden: _discussion!.isHidden,
-          isLocked: _discussion!.isLocked,
-          isSticky: _discussion!.isSticky,
-          subscription: _discussion!.subscription,
-          userId: _discussion!.userId,
-          lastPostedUserId: 'current_user_id', // 这里应该是当前用户ID
-          tagIds: _discussion!.tagIds,
-          firstPostId: _discussion!.firstPostId,
+            if (result != null) {
+              if (mounted) Navigator.pop(context);
+              SnackbarUtils.showSnackbar('回复成功');
+              _handleRefresh();
+            } else {
+              SnackbarUtils.showSnackbar('回复失败');
+            }
+          },
         );
-      });
-
-      SnackbarUtils.showSnackbar('你的回复已发布');
-    } else {
-      SnackbarUtils.showSnackbar('发布回复失败');
-    }
+      },
+    );
   }
 
   @override
@@ -534,134 +455,160 @@ class _DiscussionDetailPageState extends State<DiscussionDetailPage> {
                       final post = _posts[index];
                       final isFirstPost = index == 0;
 
-                      return Card(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: isFirstPost ? 16 : 4,
-                        ),
-                        elevation: isFirstPost ? 2 : 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 作者信息
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: isFirstPost ? 24 : 20,
-                                    backgroundColor: Colors.blue,
-                                    backgroundImage:
-                                        _userAvatars[post.userId] != null
-                                        ? NetworkImage(
-                                            _userAvatars[post.userId]!,
-                                          )
-                                        : null,
-                                    child: _userAvatars[post.userId] == null
-                                        ? Text(
-                                            (_users[post.userId] ?? '未知用户')[0],
-                                            style: TextStyle(
-                                              fontSize: isFirstPost ? 16 : 14,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _users[post.userId] ??
-                                            '未知用户', // 显示实际的作者名称
-                                        style: isFirstPost
-                                            ? Theme.of(
-                                                context,
-                                              ).textTheme.titleSmall
-                                            : Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium,
-                                      ),
-                                      Text(
-                                        TimeFormatter.formatLocalTime(
-                                          post.createdAt,
+                      return Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            color: isFirstPost
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerLow
+                                : null,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 作者信息
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
+                                      backgroundImage:
+                                          _userAvatars[post.userId] != null
+                                          ? NetworkImage(
+                                              _userAvatars[post.userId]!,
+                                            )
+                                          : null,
+                                      child: _userAvatars[post.userId] == null
+                                          ? Text(
+                                              (_users[post.userId] ??
+                                                  '未知用户')[0],
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimaryContainer,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _users[post.userId] ??
+                                              '未知用户', // 显示实际的作者名称
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              // 标签显示
-                              if (isFirstPost &&
-                                  _discussion?.tagIds.isNotEmpty == true)
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: (_discussion?.tagIds ?? []).map((
-                                    tagId,
-                                  ) {
-                                    final tagName = _tags[tagId] ?? '标签 $tagId';
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Text(
-                                        tagName,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
+                                        Text(
+                                          TimeFormatter.formatLocalTime(
+                                            post.createdAt,
+                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
                                         ),
-                                      ),
-                                    );
-                                  }).toList(),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              const SizedBox(height: 16),
-                              // 帖子内容
-                              PostContent(contentHtml: post.contentHtml),
-                              const SizedBox(height: 16),
-                              // 操作按钮
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.reply),
-                                    iconSize: isFirstPost ? 20 : 18,
-                                    onPressed: () {
-                                      // 回复
-                                      _showReplyBottomSheet();
-                                    },
+                                const SizedBox(height: 16),
+                                // 标签显示
+                                if (isFirstPost &&
+                                    _discussion?.tagIds.isNotEmpty == true)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: (_discussion?.tagIds ?? []).map(
+                                        (tagId) {
+                                          final tagName =
+                                              _tags[tagId] ?? '标签 $tagId';
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.secondaryContainer,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              tagName,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSecondaryContainer,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ).toList(),
+                                    ),
                                   ),
-                                  if (isFirstPost) const SizedBox(width: 16),
-                                  if (isFirstPost)
+                                // 帖子内容
+                                PostContent(contentHtml: post.contentHtml),
+                                const SizedBox(height: 12),
+                                // 操作按钮
+                                Row(
+                                  children: [
                                     IconButton(
-                                      icon: const Icon(Icons.share),
+                                      icon: const Icon(
+                                        Icons.chat_bubble_outline,
+                                      ),
                                       iconSize: 20,
+                                      visualDensity: VisualDensity.compact,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       onPressed: () {
-                                        // 分享
-                                        SnackbarUtils.showDevelopmentInProgress();
+                                        // 回复
+                                        _showReplyBottomSheet();
                                       },
                                     ),
-                                ],
-                              ),
-                            ],
+                                    if (isFirstPost) const SizedBox(width: 8),
+                                    if (isFirstPost)
+                                      IconButton(
+                                        icon: const Icon(Icons.share_outlined),
+                                        iconSize: 20,
+                                        visualDensity: VisualDensity.compact,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                        onPressed: () {
+                                          // 分享
+                                          SnackbarUtils.showDevelopmentInProgress();
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          const Divider(height: 1),
+                        ],
                       );
                     },
                   ),

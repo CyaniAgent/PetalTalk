@@ -18,7 +18,7 @@ import '../components/discussion/discussion_card.dart';
 import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
 import 'profile/my_account_page.dart';
-import '../../state/main_state.dart';
+import '../components/discussion/discussion_input.dart';
 
 class DiscussionList extends StatefulWidget {
   const DiscussionList({super.key});
@@ -134,31 +134,33 @@ class _DiscussionListState extends State<DiscussionList>
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PetalTalk'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
+        title: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: '搜索帖子...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            onSubmitted: (value) {
               // 搜索功能
               SnackbarUtils.showDevelopmentInProgress();
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // 切换到底部导航栏的通知页面
-              final uiController = Get.find<UiMainController>();
-              uiController.setSelectedIndex(1);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // 跳转到设置页
-              Get.toNamed('/settings');
-            },
-          ),
-        ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
@@ -214,8 +216,29 @@ class _DiscussionListState extends State<DiscussionList>
             padding: EdgeInsets.only(bottom: isMobile ? 80.0 : 0.0),
             child: FloatingActionButton(
               onPressed: () {
-                // 创建主题帖
-                Get.toNamed('/create-discussion');
+                // 显示创建主题帖弹窗
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => DiscussionInput(
+                    showTitle: true,
+                    onSubmit: (title, content) async {
+                      if (title == null) return;
+                      final result = await _discussionService.createDiscussion(
+                        title: title,
+                        content: content,
+                      );
+                      if (result != null) {
+                        Navigator.pop(context);
+                        SnackbarUtils.showSnackbar('发布成功');
+                        _handleRefresh();
+                      } else {
+                        SnackbarUtils.showSnackbar('发布失败');
+                      }
+                    },
+                  ),
+                );
               },
               child: const Icon(Icons.add),
             ),

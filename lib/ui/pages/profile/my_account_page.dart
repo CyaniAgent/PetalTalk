@@ -13,8 +13,8 @@ class MyAccountPage extends StatefulWidget {
 }
 
 class _MyAccountPageState extends State<MyAccountPage> {
-  final ProfileController _controller = Get.isRegistered<ProfileController>() 
-      ? Get.find<ProfileController>() 
+  final ProfileController _controller = Get.isRegistered<ProfileController>()
+      ? Get.find<ProfileController>()
       : Get.put(ProfileController());
 
   @override
@@ -38,18 +38,18 @@ class _MyAccountPageState extends State<MyAccountPage> {
         }
 
         final user = _controller.user.value;
-        if (user == null) {
-          return _buildNotLoggedIn(context);
-        }
 
         return RefreshIndicator(
           onRefresh: _controller.fetchProfile,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              _buildHeader(context, user),
-              _buildStats(context, user),
-              _buildActions(context),
+              if (user != null)
+                _buildHeader(context, user)
+              else
+                _buildLoggedOutHeader(context),
+              if (user != null) _buildStats(context, user),
+              _buildActions(context, user),
             ],
           ),
         );
@@ -93,26 +93,48 @@ class _MyAccountPageState extends State<MyAccountPage> {
     );
   }
 
-  Widget _buildNotLoggedIn(BuildContext context) {
+  Widget _buildLoggedOutHeader(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.account_circle_outlined,
-            size: 100,
-            color: theme.colorScheme.outlineVariant,
+    final colorScheme = theme.colorScheme;
+
+    return SliverAppBar(
+      expandedHeight: 240,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                colorScheme.surfaceContainerHighest.withAlpha(180),
+                colorScheme.surface,
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Text('登录以查看个人资料', style: theme.textTheme.headlineSmall),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => Get.toNamed('/login'),
-            icon: const Icon(Icons.login),
-            label: const Text('立即登录'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 24),
+              Icon(
+                Icons.account_circle_outlined,
+                size: 80,
+                color: theme.colorScheme.primary.withAlpha(150),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '登录以查看个人资料',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => Get.toNamed('/login'),
+                icon: const Icon(Icons.login, size: 18),
+                label: const Text('立即登录'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -283,7 +305,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
     );
   }
 
-  Widget _buildActions(BuildContext context) {
+  Widget _buildActions(BuildContext context, user) {
     final theme = Theme.of(context);
     return SliverList(
       delegate: SliverChildListDelegate([
@@ -315,23 +337,25 @@ class _MyAccountPageState extends State<MyAccountPage> {
           title: '关于 PetalTalk',
           onTap: () => Get.toNamed('/about'),
         ),
-        const SizedBox(height: 32),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: OutlinedButton.icon(
-            onPressed: () => _handleLogout(),
-            icon: const Icon(Icons.logout),
-            label: const Text('退出登录'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-              side: BorderSide(color: theme.colorScheme.errorContainer),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        if (user != null) ...[
+          const SizedBox(height: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: OutlinedButton.icon(
+              onPressed: () => _handleLogout(),
+              icon: const Icon(Icons.logout),
+              label: const Text('退出登录'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+                side: BorderSide(color: theme.colorScheme.errorContainer),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 100),
       ]),
     );

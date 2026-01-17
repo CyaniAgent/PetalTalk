@@ -281,52 +281,61 @@ class _NotificationListState extends State<NotificationList>
       delegate: SliverChildBuilderDelegate((context, index) {
         if (index < _notifications.length) {
           final notification = _notifications[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundImage:
-                    notification.fromUser?['attributes']?['avatarUrl'] != null
-                    ? NetworkImage(
-                        notification.fromUser!['attributes']!['avatarUrl'],
-                      )
-                    : null,
-                child:
-                    notification.fromUser?['attributes']?['avatarUrl'] == null
-                    ? Text(
-                        notification.fromUser?['attributes']?['username']?[0] ??
-                            '?',
-                      )
-                    : null,
-              ),
-              title: Text(_formatNotificationContent(notification)),
-              subtitle: Text(
-                TimeFormatter.formatLocalTime(notification.createdAt),
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+          return Column(
+            children: [
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ),
-              trailing: notification.isRead
-                  ? null
-                  : Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.red,
-                      ),
+                leading: CircleAvatar(
+                  backgroundImage:
+                      notification.fromUser?['attributes']?['avatarUrl'] != null
+                      ? NetworkImage(
+                          notification.fromUser!['attributes']!['avatarUrl'],
+                        )
+                      : null,
+                  child:
+                      notification.fromUser?['attributes']?['avatarUrl'] == null
+                      ? Text(
+                          notification
+                                  .fromUser?['attributes']?['username']?[0] ??
+                              '?',
+                        )
+                      : null,
+                ),
+                title: Text(
+                  _formatNotificationContent(notification),
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    TimeFormatter.formatLocalTime(notification.createdAt),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-              onTap: () {
-                // 跳转到相关主题帖
-                if (notification.subjectType == 'discussions') {
-                  Get.toNamed('/discussion/${notification.subjectId}');
-                }
-              },
-            ),
+                  ),
+                ),
+                trailing: notification.isRead
+                    ? null
+                    : Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                onTap: () {
+                  // 跳转到相关主题帖
+                  if (notification.subjectType == 'discussions') {
+                    Get.toNamed('/discussion/${notification.subjectId}');
+                  }
+                },
+              ),
+              const Divider(height: 1, indent: 72, endIndent: 16),
+            ],
           );
         } else if (_hasMore) {
           // 异步加载更多
@@ -347,7 +356,7 @@ class _NotificationListState extends State<NotificationList>
               child: Text(
                 '没有更多通知了',
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),

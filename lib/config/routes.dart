@@ -9,7 +9,6 @@ import '../ui/pages/discussion_detail_page.dart';
 import '../ui/pages/about_page.dart';
 import '../ui/pages/setting_page.dart';
 import '../ui/pages/endpoint_selection_page.dart';
-import '../ui/pages/create_discussion_page.dart';
 import '../ui/pages/notification_page.dart';
 import '../ui/pages/profile/my_account_page.dart';
 import '../ui/pages/log_viewer_page.dart';
@@ -27,9 +26,6 @@ class AppRoutes {
 
   /// 主题帖详情页
   static const String discussionDetail = '/discussion/:id';
-
-  /// 创建主题帖页
-  static const String createDiscussion = '/create-discussion';
 
   /// 主题模式页
   static const String themeMode = '/theme-mode';
@@ -60,10 +56,6 @@ final List<GetPage> appRoutes = [
   GetPage(
     name: AppRoutes.discussionDetail,
     page: () => const DiscussionDetailPage(),
-  ),
-  GetPage(
-    name: AppRoutes.createDiscussion,
-    page: () => const CreateDiscussionPage(),
   ),
   GetPage(name: AppRoutes.about, page: () => const AboutPage()),
   GetPage(name: AppRoutes.settings, page: () => const SettingPage()),
