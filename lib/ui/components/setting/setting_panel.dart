@@ -96,7 +96,9 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         }
                       }
                       // 处理关于
-                      else if (index == widget.settingItems.length + (widget.showLogoutButton ? 1 : 0)) {
+                      else if (index ==
+                          widget.settingItems.length +
+                              (widget.showLogoutButton ? 1 : 0)) {
                         _logger.info('执行关于操作');
                         if (widget.onAbout != null) {
                           _logger.debug('使用外部onAbout回调');
@@ -200,9 +202,11 @@ class _UiSettingPageState extends State<UiSettingPage> {
                             Get.to(
                               () => Scaffold(
                                 appBar: AppBar(title: Text(item['title'])),
-                                body: SingleChildScrollView(
-                                  child: item['content'],
-                                ),
+                                body: item['content'] is ListView
+                                    ? item['content']
+                                    : SingleChildScrollView(
+                                        child: item['content'],
+                                      ),
                               ),
                             );
                           },
