@@ -1,10 +1,25 @@
+/// 外观服务类，负责管理应用的外观设置、通知设置和其他全局设置
+///
+/// 该服务提供了以下功能：
+/// - 主题模式管理（浅色/深色/系统）
+/// - 动态色彩设置
+/// - 强调色管理
+/// - 字体设置
+/// - 通知设置（全局和各类型通知）
+/// - 日志设置
+/// - API请求设置
+library;
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/logger.dart';
 import '../config/constants.dart';
 
+/// 外观服务类，用于管理应用的各种设置
 class AppearanceService {
+  /// 日志记录器实例
   final AppLogger _logger = AppLogger();
+  
   // 使用Constants类中的常量，不再重复定义
   // 主题相关键
   static const String _themeModeKey = Constants.themeModeKey;
@@ -23,7 +38,15 @@ class AppearanceService {
       Constants.enableSystemNotificationsKey;
   static const String _fontFamilyKey = Constants.fontFamilyKey;
 
-  // 加载主题模式
+  /// 加载主题模式
+  ///
+  /// 从SharedPreferences中加载主题模式设置
+  /// 支持从旧版本的int类型转换为新版本的String类型
+  ///
+  /// 返回值：
+  /// - ThemeMode.light: 浅色主题
+  /// - ThemeMode.dark: 深色主题
+  /// - ThemeMode.system: 跟随系统主题
   Future<ThemeMode> loadThemeMode() async {
     _logger.debug('开始加载主题模式');
     final prefs = await SharedPreferences.getInstance();
@@ -79,7 +102,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存主题模式
+  /// 保存主题模式
+  ///
+  /// [themeMode] - 要保存的主题模式
   Future<void> saveThemeMode(ThemeMode themeMode) async {
     _logger.debug('开始保存主题模式: $themeMode');
     final prefs = await SharedPreferences.getInstance();
@@ -99,7 +124,15 @@ class AppearanceService {
     _logger.info('保存主题模式完成: $themeModeString');
   }
 
-  // 安全获取bool值
+  /// 安全获取bool值
+  ///
+  /// 从SharedPreferences中安全获取bool值，支持从int类型转换
+  ///
+  /// [prefs] - SharedPreferences实例
+  /// [key] - 要获取的键
+  /// [defaultValue] - 默认值
+  ///
+  /// 返回获取到的bool值，如果获取失败则返回默认值
   bool _safeGetBool(SharedPreferences prefs, String key, bool defaultValue) {
     try {
       final value = prefs.get(key);
@@ -122,7 +155,15 @@ class AppearanceService {
     return defaultValue;
   }
 
-  // 安全获取String值
+  /// 安全获取String值
+  ///
+  /// 从SharedPreferences中安全获取String值
+  ///
+  /// [prefs] - SharedPreferences实例
+  /// [key] - 要获取的键
+  /// [defaultValue] - 默认值
+  ///
+  /// 返回获取到的String值，如果获取失败则返回默认值
   String _safeGetString(
     SharedPreferences prefs,
     String key,
@@ -144,7 +185,11 @@ class AppearanceService {
     return defaultValue;
   }
 
-  // 加载是否使用动态颜色
+  /// 加载是否使用动态颜色
+  ///
+  /// 从SharedPreferences中加载动态颜色设置
+  ///
+  /// 返回是否使用动态颜色
   Future<bool> loadUseDynamicColor() async {
     _logger.debug('开始加载动态颜色设置');
     final prefs = await SharedPreferences.getInstance();
@@ -157,7 +202,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否使用动态颜色
+  /// 保存是否使用动态颜色
+  ///
+  /// [useDynamicColor] - 是否使用动态颜色
   Future<void> saveUseDynamicColor(bool useDynamicColor) async {
     _logger.debug('开始保存动态颜色设置: $useDynamicColor');
     final prefs = await SharedPreferences.getInstance();
@@ -165,7 +212,11 @@ class AppearanceService {
     _logger.info('保存动态颜色设置完成: $useDynamicColor');
   }
 
-  // 加载强调色
+  /// 加载强调色
+  ///
+  /// 从SharedPreferences中加载强调色设置
+  ///
+  /// 返回强调色名称
   Future<String> loadAccentColor() async {
     _logger.debug('开始加载强调色设置');
     final prefs = await SharedPreferences.getInstance();
@@ -178,7 +229,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存强调色
+  /// 保存强调色
+  ///
+  /// [accentColor] - 强调色名称
   Future<void> saveAccentColor(String accentColor) async {
     _logger.debug('开始保存强调色设置: $accentColor');
     final prefs = await SharedPreferences.getInstance();
@@ -186,7 +239,11 @@ class AppearanceService {
     _logger.info('保存强调色设置完成: $accentColor');
   }
 
-  // 加载字体系列
+  /// 加载字体系列
+  ///
+  /// 从SharedPreferences中加载字体系列设置
+  ///
+  /// 返回字体系列名称
   Future<String> loadFontFamily() async {
     _logger.debug('开始加载字体系列设置');
     final prefs = await SharedPreferences.getInstance();
@@ -199,7 +256,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存字体系列
+  /// 保存字体系列
+  ///
+  /// [fontFamily] - 字体系列名称
   Future<void> saveFontFamily(String fontFamily) async {
     _logger.debug('开始保存字体系列设置: $fontFamily');
     final prefs = await SharedPreferences.getInstance();
@@ -207,7 +266,11 @@ class AppearanceService {
     _logger.info('保存字体系列设置完成: $fontFamily');
   }
 
-  // 加载是否启用通知
+  /// 加载是否启用通知
+  ///
+  /// 从SharedPreferences中加载全局通知开关设置
+  ///
+  /// 返回是否启用全局通知
   Future<bool> loadEnableNotifications() async {
     _logger.debug('开始加载全局通知设置');
     final prefs = await SharedPreferences.getInstance();
@@ -220,7 +283,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用通知
+  /// 保存是否启用通知
+  ///
+  /// [enableNotifications] - 是否启用全局通知
   Future<void> saveEnableNotifications(bool enableNotifications) async {
     _logger.debug('开始保存全局通知设置: $enableNotifications');
     final prefs = await SharedPreferences.getInstance();
@@ -228,7 +293,11 @@ class AppearanceService {
     _logger.info('保存全局通知设置完成: $enableNotifications');
   }
 
-  // 加载是否启用消息通知
+  /// 加载是否启用消息通知
+  ///
+  /// 从SharedPreferences中加载消息通知开关设置
+  ///
+  /// 返回是否启用消息通知
   Future<bool> loadEnableMessageNotifications() async {
     _logger.debug('开始加载消息通知设置');
     final prefs = await SharedPreferences.getInstance();
@@ -237,7 +306,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用消息通知
+  /// 保存是否启用消息通知
+  ///
+  /// [enable] - 是否启用消息通知
   Future<void> saveEnableMessageNotifications(bool enable) async {
     _logger.debug('开始保存消息通知设置: $enable');
     final prefs = await SharedPreferences.getInstance();
@@ -245,7 +316,11 @@ class AppearanceService {
     _logger.info('保存消息通知设置完成: $enable');
   }
 
-  // 加载是否启用提及通知
+  /// 加载是否启用提及通知
+  ///
+  /// 从SharedPreferences中加载提及通知开关设置
+  ///
+  /// 返回是否启用提及通知
   Future<bool> loadEnableMentionNotifications() async {
     _logger.debug('开始加载提及通知设置');
     final prefs = await SharedPreferences.getInstance();
@@ -254,7 +329,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用提及通知
+  /// 保存是否启用提及通知
+  ///
+  /// [enable] - 是否启用提及通知
   Future<void> saveEnableMentionNotifications(bool enable) async {
     _logger.debug('开始保存提及通知设置: $enable');
     final prefs = await SharedPreferences.getInstance();
@@ -262,7 +339,11 @@ class AppearanceService {
     _logger.info('保存提及通知设置完成: $enable');
   }
 
-  // 加载是否启用回复通知
+  /// 加载是否启用回复通知
+  ///
+  /// 从SharedPreferences中加载回复通知开关设置
+  ///
+  /// 返回是否启用回复通知
   Future<bool> loadEnableReplyNotifications() async {
     _logger.debug('开始加载回复通知设置');
     final prefs = await SharedPreferences.getInstance();
@@ -271,7 +352,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用回复通知
+  /// 保存是否启用回复通知
+  ///
+  /// [enable] - 是否启用回复通知
   Future<void> saveEnableReplyNotifications(bool enable) async {
     _logger.debug('开始保存回复通知设置: $enable');
     final prefs = await SharedPreferences.getInstance();
@@ -279,7 +362,11 @@ class AppearanceService {
     _logger.info('保存回复通知设置完成: $enable');
   }
 
-  // 加载是否启用系统通知
+  /// 加载是否启用系统通知
+  ///
+  /// 从SharedPreferences中加载系统通知开关设置
+  ///
+  /// 返回是否启用系统通知
   Future<bool> loadEnableSystemNotifications() async {
     _logger.debug('开始加载系统通知设置');
     final prefs = await SharedPreferences.getInstance();
@@ -288,7 +375,21 @@ class AppearanceService {
     return result;
   }
 
-  // 加载日志级别
+  /// 保存是否启用系统通知
+  ///
+  /// [enable] - 是否启用系统通知
+  Future<void> saveEnableSystemNotifications(bool enable) async {
+    _logger.debug('开始保存系统通知设置: $enable');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enableSystemNotificationsKey, enable);
+    _logger.info('保存系统通知设置完成: $enable');
+  }
+
+  /// 加载日志级别
+  ///
+  /// 从SharedPreferences中加载日志级别设置
+  ///
+  /// 返回日志级别名称
   Future<String> loadLogLevel() async {
     _logger.debug('开始加载日志级别设置');
     final prefs = await SharedPreferences.getInstance();
@@ -301,7 +402,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存日志级别
+  /// 保存日志级别
+  ///
+  /// [logLevel] - 日志级别名称
   Future<void> saveLogLevel(String logLevel) async {
     _logger.debug('开始保存日志级别设置: $logLevel');
     final prefs = await SharedPreferences.getInstance();
@@ -309,7 +412,11 @@ class AppearanceService {
     _logger.info('保存日志级别设置完成: $logLevel');
   }
 
-  // 加载最大日志大小
+  /// 加载最大日志大小
+  ///
+  /// 从SharedPreferences中加载最大日志大小设置
+  ///
+  /// 返回最大日志大小（MB）
   Future<int> loadMaxLogSize() async {
     _logger.debug('开始加载最大日志大小设置');
     final prefs = await SharedPreferences.getInstance();
@@ -319,7 +426,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存最大日志大小
+  /// 保存最大日志大小
+  ///
+  /// [maxLogSize] - 最大日志大小（MB）
   Future<void> saveMaxLogSize(int maxLogSize) async {
     _logger.debug('开始保存最大日志大小设置: $maxLogSize');
     final prefs = await SharedPreferences.getInstance();
@@ -327,7 +436,11 @@ class AppearanceService {
     _logger.info('保存最大日志大小设置完成: $maxLogSize');
   }
 
-  // 加载是否启用日志导出
+  /// 加载是否启用日志导出
+  ///
+  /// 从SharedPreferences中加载日志导出开关设置
+  ///
+  /// 返回是否启用日志导出
   Future<bool> loadEnableLogExport() async {
     _logger.debug('开始加载日志导出设置');
     final prefs = await SharedPreferences.getInstance();
@@ -340,7 +453,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否启用日志导出
+  /// 保存是否启用日志导出
+  ///
+  /// [enableLogExport] - 是否启用日志导出
   Future<void> saveEnableLogExport(bool enableLogExport) async {
     _logger.debug('开始保存日志导出设置: $enableLogExport');
     final prefs = await SharedPreferences.getInstance();
@@ -348,15 +463,11 @@ class AppearanceService {
     _logger.info('保存日志导出设置完成: $enableLogExport');
   }
 
-  // 保存是否启用系统通知
-  Future<void> saveEnableSystemNotifications(bool enable) async {
-    _logger.debug('开始保存系统通知设置: $enable');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_enableSystemNotificationsKey, enable);
-    _logger.info('保存系统通知设置完成: $enable');
-  }
-
-  // 加载是否使用浏览器请求头
+  /// 加载是否使用浏览器请求头
+  ///
+  /// 从SharedPreferences中加载浏览器请求头开关设置
+  ///
+  /// 返回是否使用浏览器请求头
   Future<bool> loadUseBrowserHeaders() async {
     _logger.debug('开始加载浏览器请求头设置');
     final prefs = await SharedPreferences.getInstance();
@@ -369,7 +480,9 @@ class AppearanceService {
     return result;
   }
 
-  // 保存是否使用浏览器请求头
+  /// 保存是否使用浏览器请求头
+  ///
+  /// [useBrowserHeaders] - 是否使用浏览器请求头
   Future<void> saveUseBrowserHeaders(bool useBrowserHeaders) async {
     _logger.debug('开始保存浏览器请求头设置: $useBrowserHeaders');
     final prefs = await SharedPreferences.getInstance();

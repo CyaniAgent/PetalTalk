@@ -84,7 +84,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         selectedIndex.value = index;
                       }
                       // 处理退出登录
-                      else if (settingController.userLogin.value &&
+                      else if (widget.showLogoutButton &&
                           index == widget.settingItems.length) {
                         _logger.info('执行退出登录操作');
                         if (widget.onLogout != null) {
@@ -96,8 +96,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         }
                       }
                       // 处理关于
-                      else if (settingController.userLogin.value &&
-                          index == widget.settingItems.length + 1) {
+                      else if (index == widget.settingItems.length + (widget.showLogoutButton ? 1 : 0)) {
                         _logger.info('执行关于操作');
                         if (widget.onAbout != null) {
                           _logger.debug('使用外部onAbout回调');
@@ -134,8 +133,7 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         );
                       }),
                       // 退出登录按钮 - 仅在登录状态下显示
-                      if (settingController.userLogin.value &&
-                          widget.showLogoutButton)
+                      if (widget.showLogoutButton)
                         NavigationDrawerDestination(
                           icon: const Icon(Icons.logout_outlined),
                           label: const Text('退出登录'),
@@ -218,31 +216,27 @@ class _UiSettingPageState extends State<UiSettingPage> {
                 }),
 
                 const SizedBox(height: 16),
-                Obx(
-                  () => Visibility(
-                    visible:
-                        settingController.userLogin.value &&
-                        widget.showLogoutButton,
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      elevation: 2,
-                      child: ListTile(
-                        onTap: () {
-                          _logger.info('窄屏模式 - 执行退出登录操作');
-                          if (widget.onLogout != null) {
-                            _logger.debug('使用外部onLogout回调');
-                            widget.onLogout!();
-                          } else {
-                            _logger.debug('使用settingController.loginOut()');
-                            settingController.loginOut();
-                          }
-                        },
-                        leading: const Icon(Icons.logout_outlined),
-                        title: const Text('退出登录'),
-                      ),
+                Visibility(
+                  visible: widget.showLogoutButton,
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    elevation: 2,
+                    child: ListTile(
+                      onTap: () {
+                        _logger.info('窄屏模式 - 执行退出登录操作');
+                        if (widget.onLogout != null) {
+                          _logger.debug('使用外部onLogout回调');
+                          widget.onLogout!();
+                        } else {
+                          _logger.debug('使用settingController.loginOut()');
+                          settingController.loginOut();
+                        }
+                      },
+                      leading: const Icon(Icons.logout_outlined),
+                      title: const Text('退出登录'),
                     ),
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import '../../state/main_state.dart';
+import '../../state/profile_controller.dart';
 
 import '../../api/services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
@@ -43,6 +44,13 @@ class LoginController extends GetxController {
         // 登录成功，重置侧边栏选中项为首页
         final mainController = Get.find<UiMainController>();
         mainController.setSelectedIndex(0);
+        
+        // 确保ProfileController已注册并刷新数据
+        final profileController = Get.isRegistered<ProfileController>() 
+            ? Get.find<ProfileController>() 
+            : Get.put(ProfileController());
+        profileController.fetchProfile();
+        
         // 跳转到首页
         Get.offAllNamed('/home');
       } else {
