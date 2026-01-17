@@ -63,6 +63,15 @@ class _AppLicensePageState extends State<AppLicensePage> {
         'Flutter': 'flutter.txt',
         'GetX': 'get.txt',
         'logger': 'logger.txt',
+        'connectivity_plus': 'connectivity_plus.txt',
+        'cookie_jar': 'cookie_jar.txt',
+        'custom_sliding_segmented_control': 'custom_sliding_segmented_control.txt',
+        'dio': 'dio.txt',
+        'Flutter_dismissible_page': 'Flutter_dismissible_page.txt',
+        'dynamic_color': 'flutter-packages.txt',
+        'extended_nested_scroll_view': 'extended_nested_scroll_view.txt',
+        'flutter_displaymode': 'flutter_displaymode.txt',
+        'flutter_guid': 'flutter_guid.txt',
         // 可以根据需要添加更多依赖
       };
 
