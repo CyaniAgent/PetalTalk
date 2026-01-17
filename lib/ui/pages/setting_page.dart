@@ -642,8 +642,9 @@ class _SettingPageState extends State<SettingPage> {
   ///
   /// 包含个人资料、密码修改和绑定邮箱等账号相关设置
   Widget _buildAccountSettings() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
           title: const Text('个人资料'),
@@ -681,8 +682,9 @@ class _SettingPageState extends State<SettingPage> {
       future: _api.getEndpoints(),
       builder: (context, snapshot) {
         final endpoints = snapshot.data ?? [];
-        return ListView(
-          padding: const EdgeInsets.all(16),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // 当前端点信息
             Card(
@@ -806,8 +808,9 @@ class _SettingPageState extends State<SettingPage> {
   /// 包含总通知开关和各种类型通知的单独开关
   Widget _buildNotificationSettings() {
     return Obx(
-      () => ListView(
-        padding: const EdgeInsets.all(16),
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           SwitchListTile(
             title: const Text('启用通知'),
@@ -858,8 +861,9 @@ class _SettingPageState extends State<SettingPage> {
   /// 包含深色模式、动态色彩、强调色和字体设置等功能
   Widget _buildAppearanceSettings() {
     return Obx(
-      () => ListView(
-        padding: const EdgeInsets.all(16),
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           SwitchListTile(
             title: const Text('深色模式'),
@@ -905,8 +909,9 @@ class _SettingPageState extends State<SettingPage> {
   ///
   /// 包含常见问题、使用教程、反馈问题和开源许可证等链接
   Widget _buildHelpSettings() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
           title: const Text('常见问题'),
@@ -945,8 +950,9 @@ class _SettingPageState extends State<SettingPage> {
   /// 包含日志管理、日志级别设置、最大日志大小设置和日志导出开关等功能
   Widget _buildLogSettings() {
     return Obx(
-      () => ListView(
-        padding: const EdgeInsets.all(16),
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // 日志管理操作
           Card(
@@ -1097,8 +1103,9 @@ class _SettingPageState extends State<SettingPage> {
   /// 包含使用浏览器请求头等API相关设置
   Widget _buildApiSettings() {
     return Obx(
-      () => ListView(
-        padding: const EdgeInsets.all(16),
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // 使用浏览器请求头
           SwitchListTile(
@@ -1116,8 +1123,9 @@ class _SettingPageState extends State<SettingPage> {
   ///
   /// 包含删除所有数据等数据管理功能
   Widget _buildDataSettings() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // 删除所有数据
         Card(

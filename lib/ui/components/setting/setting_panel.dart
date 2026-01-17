@@ -162,13 +162,10 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         child: Obx(() {
                           final content = widget
                               .settingItems[selectedIndex.value]['content'];
-                          if (content is ListView) {
-                            return SizedBox(
-                              height: double.infinity,
-                              child: content,
-                            );
-                          }
-                          return content;
+                          return SizedBox(
+                            height: double.infinity,
+                            child: SingleChildScrollView(child: content),
+                          );
                         }),
                       ),
                     ),
