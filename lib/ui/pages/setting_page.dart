@@ -4,6 +4,7 @@
 /// 帮助与反馈、日志设置、API请求设置和数据管理等功能。
 library;
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../global_services/appearance_service.dart';
@@ -12,6 +13,7 @@ import '../components/setting/setting_panel.dart';
 import '../../api/services/auth_service.dart';
 import '../../api/flarum_api.dart';
 import '../../core/logger.dart';
+import '../../config/constants.dart';
 import 'license_page.dart';
 
 /// 设置页面的主组件
@@ -72,6 +74,12 @@ class _SettingPageState extends State<SettingPage> {
   /// 是否使用浏览器请求头
   final RxBool _useBrowserHeaders = true.obs;
 
+  /// User Agent 类型
+  final RxString _userAgentType = 'default'.obs;
+
+  /// 当前 User Agent 字符串
+  final RxString _currentUserAgent = ''.obs;
+
   /// 当前选择的字体系列
   final RxString _fontFamily = 'Google Sans'.obs;
 
@@ -107,6 +115,7 @@ class _SettingPageState extends State<SettingPage> {
         _appearanceService.loadMaxLogSize(),
         _appearanceService.loadEnableLogExport(),
         _appearanceService.loadUseBrowserHeaders(),
+        _appearanceService.loadUserAgentType(),
         _appearanceService.loadFontFamily(),
       ]);
 
@@ -123,7 +132,13 @@ class _SettingPageState extends State<SettingPage> {
       _maxLogSize.value = settings[9] as int;
       _enableLogExport.value = settings[10] as bool;
       _useBrowserHeaders.value = settings[11] as bool;
-      _fontFamily.value = settings[12] as String;
+      _userAgentType.value = settings[12] as String;
+      _fontFamily.value = settings[13] as String;
+
+      // 更新当前 User Agent 字符串显示
+      _currentUserAgent.value = _getCurrentUserAgentString(
+        _userAgentType.value,
+      );
 
       _logger.info(
         '当前设置加载完成: 深色模式 = ${_isDarkMode.value}, 动态色彩 = ${_useDynamicColor.value}, 强调色 = ${_accentColor.value}, 通知启用 = ${_enableNotifications.value}',
@@ -494,6 +509,43 @@ class _SettingPageState extends State<SettingPage> {
     } catch (e, stackTrace) {
       _logger.error('切换使用浏览器请求头出错', e, stackTrace);
       SnackbarUtils.showSnackbar('切换API请求设置失败', type: SnackbarType.error);
+    }
+  }
+
+  // 更新 User Agent 类型
+  Future<void> _updateUserAgentType(String value) async {
+    _logger.debug('更新 User Agent 类型: $value');
+    try {
+      await _appearanceService.saveUserAgentType(value);
+      _userAgentType.value = value;
+      _currentUserAgent.value = _getCurrentUserAgentString(value);
+      _logger.info('User Agent 类型更新成功: $value');
+      SnackbarUtils.showSnackbar('User Agent 已更新');
+    } catch (e, stackTrace) {
+      _logger.error('更新 User Agent 类型出错', e, stackTrace);
+      SnackbarUtils.showSnackbar('更新 User Agent 失败', type: SnackbarType.error);
+    }
+  }
+
+  // 获取 User Agent 字符串
+  String _getCurrentUserAgentString(String type) {
+    if (type == Constants.userAgentTypeChrome) {
+      return Platform.isAndroid
+          ? 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.76 Mobile Safari/537.36'
+          : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.60 Safari/537.36';
+    } else if (type == Constants.userAgentTypeFirefox) {
+      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0';
+    } else {
+      String ua =
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      if (Platform.isAndroid) {
+        ua =
+            'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+      } else if (Platform.isIOS) {
+        ua =
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+      }
+      return ua;
     }
   }
 
@@ -1100,22 +1152,121 @@ class _SettingPageState extends State<SettingPage> {
 
   /// 构建API请求设置内容
   ///
-  /// 包含使用浏览器请求头等API相关设置
-  Widget _buildApiSettings() {
-    return Obx(
-      () => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 使用浏览器请求头
-          SwitchListTile(
-            title: const Text('使用浏览器请求头'),
-            subtitle: const Text('模仿正常浏览器请求，包括User-Agent、Referer等头信息'),
-            value: _useBrowserHeaders.value,
-            onChanged: _toggleUseBrowserHeaders,
+  /// 包含是否使用浏览器请求头、User Agent 选择等设置
+  Widget _buildApiRequestSettings() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SwitchListTile(
+          title: const Text('使用浏览器请求头'),
+          subtitle: const Text('启用后，API请求将模拟浏览器行为，有助于通过某些安全校验'),
+          value: _useBrowserHeaders.value,
+          onChanged: _toggleUseBrowserHeaders,
+        ),
+        const Divider(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '当前 User Agent',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText(
+                    _currentUserAgent.value,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        ListTile(
+          title: const Text('选择 User Agent'),
+          subtitle: Obx(() {
+            switch (_userAgentType.value) {
+              case Constants.userAgentTypeChrome:
+                return const Text('Chrome (最新)');
+              case Constants.userAgentTypeFirefox:
+                return const Text('Alternative (Firefox)');
+              default:
+                return const Text('默认');
+            }
+          }),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: _showUserAgentDialog,
+        ),
+      ],
+    );
+  }
+
+  /// 显示 User Agent 选择对话框
+  void _showUserAgentDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('选择 User Agent'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: const Text('默认'),
+                subtitle: const Text('根据平台自动选择'),
+                value: Constants.userAgentTypeDefault,
+                groupValue: _userAgentType.value,
+                onChanged: (value) {
+                  if (value != null) {
+                    _updateUserAgentType(value);
+                    Get.back();
+                  }
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('Chrome 最新'),
+                subtitle: const Text('模拟最新版 Chrome 浏览器'),
+                value: Constants.userAgentTypeChrome,
+                groupValue: _userAgentType.value,
+                onChanged: (value) {
+                  if (value != null) {
+                    _updateUserAgentType(value);
+                    Get.back();
+                  }
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('Alternative'),
+                subtitle: const Text('优先使用最新版 Firefox UA'),
+                value: Constants.userAgentTypeFirefox,
+                groupValue: _userAgentType.value,
+                onChanged: (value) {
+                  if (value != null) {
+                    _updateUserAgentType(value);
+                    Get.back();
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          ],
+        );
+      },
     );
   }
 
@@ -1231,7 +1382,7 @@ class _SettingPageState extends State<SettingPage> {
       {
         'icon': Icons.cloud_upload,
         'title': 'API请求设置',
-        'content': _buildApiSettings(),
+        'content': _buildApiRequestSettings(),
       },
       {
         'icon': Icons.data_saver_on,

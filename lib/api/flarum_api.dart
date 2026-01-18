@@ -135,7 +135,40 @@ class FlarumApi {
               prefs.getBool(Constants.useBrowserHeadersKey) ??
               Constants.defaultUseBrowserHeaders;
 
-          if (!useBrowserHeaders) {
+          if (useBrowserHeaders) {
+            // 获取 User Agent 类型
+            final uaType =
+                prefs.getString(Constants.userAgentTypeKey) ??
+                Constants.defaultUserAgentType;
+
+            String userAgent;
+            if (uaType == Constants.userAgentTypeChrome) {
+              // 强制使用最新 Chrome UA
+              userAgent = Platform.isAndroid
+                  ? 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.76 Mobile Safari/537.36'
+                  : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.60 Safari/537.36';
+            } else if (uaType == Constants.userAgentTypeFirefox) {
+              // 强制使用最新 Firefox UA
+              userAgent =
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0';
+            } else {
+              // 默认 UA
+              userAgent =
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+              if (Platform.isAndroid) {
+                userAgent =
+                    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+              } else if (Platform.isIOS) {
+                userAgent =
+                    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+              }
+            }
+
+            options.headers['User-Agent'] = userAgent;
+            options.headers['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8';
+            options.headers['Referer'] = _baseUrl;
+            options.headers['Origin'] = _baseUrl;
+          } else {
             // 如果不使用浏览器请求头，只保留基本请求头
             options.headers = {
               'Accept': 'application/vnd.api+json',

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../config/constants.dart';
 
 /// 日志工具类，管理应用中的所有日志输出
@@ -34,6 +35,11 @@ class AppLogger {
 
   /// 初始化日志配置
   Future<void> initialize() async {
+    // Android 权限请求
+    if (Platform.isAndroid) {
+      await _requestPermissions();
+    }
+
     // 创建控制台输出
     final consoleOutput = ConsoleOutput();
 
@@ -48,21 +54,37 @@ class AppLogger {
     );
   }
 
+  /// 请求 Android 必要权限
+  Future<void> _requestPermissions() async {
+    try {
+      // 请求存储权限
+      await [Permission.storage].request();
+
+      // 在 Android 11+ 请求所有文件访问权限
+      if (await Permission.manageExternalStorage.isDenied) {
+        await Permission.manageExternalStorage.request();
+      }
+    } catch (e) {
+      // 忽略权限请求异常
+    }
+  }
+
   /// 创建文件输出
   Future<AppFileOutput> _createFileOutput() async {
     try {
       String path;
       if (Platform.isAndroid) {
-        // Android 平台：/storage/emulated/0/Android/data/top.sorange.PetalTalk/debug/console_{date}_{time}.txt
+        // Android 平台：动态获取外部存储目录
+        final directory = await getExternalStorageDirectory();
+        if (directory == null) throw Exception('无法获取外部存储目录');
+
         final now = DateTime.now();
         final dateStr =
             "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
         final timeStr =
             "${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}-${now.second.toString().padLeft(2, '0')}";
 
-        final baseDir =
-            '/storage/emulated/0/Android/data/top.sorange.PetalTalk';
-        final debugDir = Directory('$baseDir/debug');
+        final debugDir = Directory('${directory.path}/debug');
         if (!debugDir.existsSync()) {
           debugDir.createSync(recursive: true);
         }

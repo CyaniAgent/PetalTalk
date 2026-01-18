@@ -19,7 +19,7 @@ import '../config/constants.dart';
 class AppearanceService {
   /// 日志记录器实例
   final AppLogger _logger = AppLogger();
-  
+
   // 使用Constants类中的常量，不再重复定义
   // 主题相关键
   static const String _themeModeKey = Constants.themeModeKey;
@@ -488,5 +488,26 @@ class AppearanceService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(Constants.useBrowserHeadersKey, useBrowserHeaders);
     _logger.info('保存浏览器请求头设置完成: $useBrowserHeaders');
+  }
+
+  /// 加载 User Agent 类型
+  Future<String> loadUserAgentType() async {
+    _logger.debug('开始加载 User Agent 类型设置');
+    final prefs = await SharedPreferences.getInstance();
+    final result = _safeGetString(
+      prefs,
+      Constants.userAgentTypeKey,
+      Constants.defaultUserAgentType,
+    );
+    _logger.info('加载 User Agent 类型设置完成: $result');
+    return result;
+  }
+
+  /// 保存 User Agent 类型
+  Future<void> saveUserAgentType(String type) async {
+    _logger.debug('开始保存 User Agent 类型设置: $type');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(Constants.userAgentTypeKey, type);
+    _logger.info('保存 User Agent 类型设置完成: $type');
   }
 }
