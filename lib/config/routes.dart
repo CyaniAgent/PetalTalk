@@ -13,10 +13,14 @@ import '../ui/pages/notification_page.dart';
 import '../ui/pages/profile/my_account_page.dart';
 import '../ui/pages/log_viewer_page.dart';
 import '../ui/pages/license_page.dart';
+import '../ui/pages/welcome_page.dart';
 
 class AppRoutes {
   /// 初始路由
   static const String initialRoute = '/home';
+
+  /// 欢迎页
+  static const String welcome = '/welcome';
 
   /// 登录页
   static const String login = '/login';
@@ -64,4 +68,5 @@ final List<GetPage> appRoutes = [
   GetPage(name: '/profile', page: () => const MyAccountPage()),
   GetPage(name: AppRoutes.logs, page: () => const LogViewerPage()),
   GetPage(name: AppRoutes.license, page: () => const AppLicensePage()),
+  GetPage(name: AppRoutes.welcome, page: () => const WelcomePage()),
 ];

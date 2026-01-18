@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:m3e_collection/m3e_collection.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/initializer.dart';
 import 'global_services/window_service.dart';
@@ -60,6 +61,9 @@ class _MyAppState extends State<MyApp> {
   /// 窗口是否最大化
   bool _isMaximized = false;
 
+  /// 初始路由
+  String _initialRoute = '/home';
+
   /// 主题服务实例
   final ThemeService _themeService = Get.find<ThemeService>();
 
@@ -72,6 +76,9 @@ class _MyAppState extends State<MyApp> {
   /// 并行执行初始化任务，提高启动速度
   /// 同时加载主题设置和窗口状态
   Future<void> _initializeApp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
+
     final results = await Future.wait([
       _themeService.loadThemeMode(),
       WindowService.isMaximized(),
@@ -80,6 +87,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _themeMode = results[0] as ThemeMode;
       _isMaximized = results[1] as bool;
+      _initialRoute = hasSeenWelcome ? '/home' : '/welcome';
       _isLoading = false;
     });
   }
@@ -348,7 +356,7 @@ class _MyAppState extends State<MyApp> {
               theme: finalLightTheme,
               darkTheme: finalDarkTheme,
               themeMode: _themeMode,
-              initialRoute: '/home', // 始终从首页开始，初始化器已确保有端点
+              initialRoute: _initialRoute, // 使用动态计算的初始路由
               getPages: appRoutes, // 使用统一的路由配置列表
               navigatorObservers: [FlutterSmartDialog.observer],
             );
