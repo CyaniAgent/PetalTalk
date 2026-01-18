@@ -37,7 +37,7 @@ class AppInfo {
   /// 开发者GitHub用户名和角色映射
   static const List<DeveloperRole> developerRoles = [
     DeveloperRole(name: 'CyaniAgent', role: '组织'),
-    DeveloperRole(name: 'SakuraCake', role: '贡献者'),
+    DeveloperRole(name: 'SakuraCake', role: '项目创建者'),
     DeveloperRole(name: 'YunaAyase', role: '贡献者'),
   ];
 }
