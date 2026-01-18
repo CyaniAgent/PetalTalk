@@ -6,6 +6,7 @@
 /// 3. 获取主题帖的所有帖子
 /// 4. 回复主题帖
 /// 5. 更新帖子
+/// 6. 点赞/取消点赞
 library;
 
 import '../flarum_api.dart';
@@ -361,6 +362,51 @@ class PostService {
       );
       logger.error('回复主题帖发生异常: $detailedError', e);
       ErrorHandler.handleError(e, 'Reply to discussion');
+      return null;
+    }
+  }
+
+  /// 点赞或取消点赞帖子
+  ///
+  /// 参数：
+  /// - id: 帖子ID
+  /// - isLiked: 是否点赞
+  ///
+  /// 返回值：
+  /// - `Future<Map<String, dynamic>?>`: 包含操作结果的响应数据，失败返回null
+  Future<Map<String, dynamic>?> likePost({
+    required String id,
+    required bool isLiked,
+  }) async {
+    logger.info('${isLiked ? "点赞" : "取消点赞"}帖子，帖子ID: $id');
+    try {
+      final response = await _api.patch(
+        '/api/posts/$id',
+        data: {
+          'data': {
+            'type': 'posts',
+            'id': id,
+            'attributes': {'isLiked': isLiked},
+          },
+        },
+      );
+
+      if (response.statusCode == 200) {
+        logger.debug('${isLiked ? "点赞" : "取消点赞"}成功，帖子ID: $id');
+        return response.data;
+      }
+      logger.warning(
+        '${isLiked ? "点赞" : "取消点赞"}失败，帖子ID: $id，状态码: ${response.statusCode}',
+      );
+      return null;
+    } catch (e) {
+      final detailedError = ErrorHandler.createDetailedError(
+        e,
+        errorMessage: '${isLiked ? "点赞" : "取消点赞"}发生异常',
+        context: {'postId': id, 'isLiked': isLiked},
+      );
+      logger.error('${isLiked ? "点赞" : "取消点赞"}发生异常: $detailedError', e);
+      ErrorHandler.handleError(e, 'Like post');
       return null;
     }
   }

@@ -1243,16 +1243,9 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = Get.find<AuthService>();
-
     return UiSettingPage(
       settingItems: _buildSettingItems(),
       title: '设置',
-      showLogoutButton: authService.isLoggedIn(),
-      onLogout: () {
-        authService.logout();
-        Get.offAllNamed('/login');
-      },
       onAbout: () {
         Get.toNamed('/about');
       },

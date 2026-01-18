@@ -284,21 +284,15 @@ class DiscussionService {
         data: {
           'data': {
             'type': 'discussions',
-            'attributes': {'title': title},
-            'relationships': {
-              'firstPost': {
-                'data': {
-                  'type': 'posts',
-                  'attributes': {'content': content},
-                },
-              },
-              if (tags != null && tags.isNotEmpty)
+            'attributes': {'title': title, 'content': content},
+            if (tags != null && tags.isNotEmpty)
+              'relationships': {
                 'tags': {
                   'data': tags
                       .map((tag) => {'type': 'tags', 'id': tag})
                       .toList(),
                 },
-            },
+              },
           },
         },
       );
@@ -346,7 +340,7 @@ class DiscussionService {
     required String subscription,
   }) async {
     try {
-      final response = await _api.post(
+      final response = await _api.patch(
         '/api/discussions/$id',
         data: {
           'data': {

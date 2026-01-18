@@ -51,8 +51,29 @@ class AppLogger {
   /// 创建文件输出
   Future<AppFileOutput> _createFileOutput() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      _logFilePath = '${directory.path}/app_logs.txt';
+      String path;
+      if (Platform.isAndroid) {
+        // Android 平台：/storage/emulated/0/Android/data/top.sorange.PetalTalk/debug/console_{date}_{time}.txt
+        final now = DateTime.now();
+        final dateStr =
+            "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+        final timeStr =
+            "${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}-${now.second.toString().padLeft(2, '0')}";
+
+        final baseDir =
+            '/storage/emulated/0/Android/data/top.sorange.PetalTalk';
+        final debugDir = Directory('$baseDir/debug');
+        if (!debugDir.existsSync()) {
+          debugDir.createSync(recursive: true);
+        }
+        path = '${debugDir.path}/console_${dateStr}_$timeStr.txt';
+      } else {
+        // 其他平台：保持原样，使用文档目录
+        final directory = await getApplicationDocumentsDirectory();
+        path = '${directory.path}/app_logs.txt';
+      }
+
+      _logFilePath = path;
       final file = File(_logFilePath!);
 
       // 确保文件存在
@@ -60,8 +81,10 @@ class AppLogger {
         file.createSync(recursive: true);
       }
 
-      // 检查文件大小，超过限制则清理
-      await _checkAndCleanLogFile(file);
+      // 检查文件大小，超过限制则清理（仅针对非 Android 或固定文件名的平台）
+      if (!Platform.isAndroid) {
+        await _checkAndCleanLogFile(file);
+      }
 
       return AppFileOutput(
         file: file,
@@ -69,9 +92,11 @@ class AppLogger {
         mode: FileMode.append,
       );
     } catch (e) {
-      // 如果文件创建失败，返回控制台输出
+      // 如果文件创建失败，返回本地控制台输出
+      final defaultPath = './app_logs.txt';
+      _logFilePath = defaultPath;
       return AppFileOutput(
-        file: File('./app_logs.txt'),
+        file: File(defaultPath),
         overrideExisting: false,
         mode: FileMode.append,
       );
