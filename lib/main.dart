@@ -18,27 +18,13 @@ import 'core/logger.dart';
 import 'utils/snackbar_utils.dart';
 
 /// 应用主入口函数
-void main() async {
-  // 记录应用启动开始时间
-  final stopwatch = Stopwatch()..start();
-
+void main() {
   // 确保Flutter绑定已初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 初始化日志系统
-  await logger.initialize();
-  logger.info('应用启动开始');
-
-  // 初始化应用
-  await AppInitializer.init();
-  logger.info('应用初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
-
-  // 启动应用
+  // 立即启动应用，让框架尽快渲染第一帧
+  // heavy initialization moved to _MyAppState._initializeApp
   runApp(const MyApp());
-
-  // 记录应用启动完成时间
-  stopwatch.stop();
-  logger.info('应用启动完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
 }
 
 /// 应用根组件，管理应用的主题和窗口状态
@@ -65,7 +51,8 @@ class _MyAppState extends State<MyApp> {
   String _initialRoute = '/home';
 
   /// 主题服务实例
-  final ThemeService _themeService = Get.find<ThemeService>();
+  /// 主题服务实例 - 也就是late init
+  late final ThemeService _themeService;
 
   @override
   void initState() {
@@ -76,20 +63,37 @@ class _MyAppState extends State<MyApp> {
   /// 并行执行初始化任务，提高启动速度
   /// 同时加载主题设置和窗口状态
   Future<void> _initializeApp() async {
+    // 1. 初始化日志（非阻塞权限请求）
+    await logger.initialize();
+    logger.info('应用启动 - UI已挂载');
+    final stopwatch = Stopwatch()..start();
+
+    // 2. 初始化核心服务（AppInitializer）
+    await AppInitializer.init();
+
+    // 3. 获取服务实例（此时 ServiceLocator 已就绪）
+    _themeService = Get.find<ThemeService>();
+
     final prefs = await SharedPreferences.getInstance();
     final hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
 
+    // 4. 并行加载 UI 相关状态
     final results = await Future.wait([
       _themeService.loadThemeMode(),
       WindowService.isMaximized(),
     ]);
 
-    setState(() {
-      _themeMode = results[0] as ThemeMode;
-      _isMaximized = results[1] as bool;
-      _initialRoute = hasSeenWelcome ? '/home' : '/welcome';
-      _isLoading = false;
-    });
+    stopwatch.stop();
+    logger.info('应用初始化全流程完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+
+    if (mounted) {
+      setState(() {
+        _themeMode = results[0] as ThemeMode;
+        _isMaximized = results[1] as bool;
+        _initialRoute = hasSeenWelcome ? '/home' : '/welcome';
+        _isLoading = false;
+      });
+    }
   }
 
   /// 切换窗口最大化/还原状态
@@ -129,9 +133,7 @@ class _MyAppState extends State<MyApp> {
                 ),
                 const SizedBox(height: 24),
                 // 加载指示器
-                LoadingIndicatorM3E(
-                  color: baseTheme.colorScheme.primary,
-                ),
+                LoadingIndicatorM3E(color: baseTheme.colorScheme.primary),
               ],
             ),
           ),
@@ -155,7 +157,11 @@ class _MyAppState extends State<MyApp> {
 
             // 错误处理
             if (snapshot.hasError) {
-              logger.error('主题创建失败: ${snapshot.error}', snapshot.error, snapshot.stackTrace);
+              logger.error(
+                '主题创建失败: ${snapshot.error}',
+                snapshot.error,
+                snapshot.stackTrace,
+              );
               return MaterialApp(
                 theme: baseTheme,
                 home: Scaffold(
@@ -179,9 +185,7 @@ class _MyAppState extends State<MyApp> {
                         const SizedBox(height: 8),
                         Text(
                           '无法加载主题设置，请重试',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade600),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
@@ -252,7 +256,7 @@ class _MyAppState extends State<MyApp> {
                 SnackbarUtils.init(ScaffoldMessenger.of(context));
 
                 // 检测是否为桌面平台
-                final bool isDesktop = 
+                final bool isDesktop =
                     Platform.isWindows || Platform.isMacOS || Platform.isLinux;
                 // 仅在桌面平台显示标题栏
                 const double titleBarHeight = 30.0;
@@ -283,9 +287,10 @@ class _MyAppState extends State<MyApp> {
                             // 双击标题栏最大化/还原
                             onDoubleTap: _toggleMaximize,
                             child: Container(
-                              color: Theme.of(
-                                context,
-                              ).appBarTheme.backgroundColor ??
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).appBarTheme.backgroundColor ??
                                   Theme.of(context).colorScheme.surface,
                               child: Row(
                                 children: [
@@ -296,9 +301,10 @@ class _MyAppState extends State<MyApp> {
                                       child: Text(
                                         'PetalTalk',
                                         style: TextStyle(
-                                          color: Theme.of(
-                                            context,
-                                          ).appBarTheme.foregroundColor ??
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).appBarTheme.foregroundColor ??
                                               Theme.of(
                                                 context,
                                               ).colorScheme.onSurface,
@@ -366,5 +372,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
-

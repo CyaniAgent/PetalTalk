@@ -7,6 +7,8 @@ import 'package:dio/dio.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 import '../../api/flarum_api.dart';
 import '../../global_services/appearance_service.dart';
@@ -348,13 +350,42 @@ class _AllSetStepState extends State<_AllSetStep> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FocusNode _focusNode = FocusNode();
   bool _showSwipeHint = false;
+  bool _permissionsGranted = false;
 
   bool get _isDesktop => GetPlatform.isDesktop;
 
   @override
   void initState() {
     super.initState();
-    _playSound();
+    _checkPermissions();
+  }
+
+  Future<void> _checkPermissions() async {
+    if (Platform.isAndroid) {
+      // 请求存储和通知权限
+      await [
+        Permission.storage,
+        Permission.notification,
+        Permission.manageExternalStorage,
+      ].request();
+
+      // 无论结果如何，我们在欢迎页面都继续（或者可以根据需要更严格）
+      // 这里我们标记为已授予，以便开始动画
+      if (mounted) {
+        setState(() {
+          _permissionsGranted = true;
+        });
+        _playSound();
+      }
+    } else {
+      // 非 Android 平台直接标记为已授予
+      if (mounted) {
+        setState(() {
+          _permissionsGranted = true;
+        });
+        _playSound();
+      }
+    }
   }
 
   @override
@@ -422,98 +453,101 @@ class _AllSetStepState extends State<_AllSetStep> {
               // 1. 替代 Lottie 的动态背景：流动的渐变
               const AnimatedGradientBackground(),
 
-              // 2. 核心动画逻辑：倒计时 -> 设置完成
-              // 数字 3
-              Text("3", style: countdownStyle)
-                  .animate()
-                  .fadeIn(duration: const Duration(milliseconds: 300))
-                  .scale(
-                    begin: const Offset(0.5, 0.5),
-                    curve: Curves.easeOutBack,
-                  )
-                  .fadeOut(
-                    delay: const Duration(milliseconds: 700),
-                    duration: const Duration(milliseconds: 200),
-                  ),
+              if (_permissionsGranted) ...[
+                // 2. 核心动画逻辑：倒计时 -> 设置完成
+                // 数字 3
+                Text("3", style: countdownStyle)
+                    .animate()
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+                    .scale(
+                      begin: const Offset(0.5, 0.5),
+                      curve: Curves.easeOutBack,
+                    )
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 700),
+                      duration: const Duration(milliseconds: 200),
+                    ),
 
-              // 数字 2
-              Text("2", style: countdownStyle)
-                  .animate(delay: const Duration(milliseconds: 1000)) // 1秒后开始
-                  .fadeIn(duration: const Duration(milliseconds: 300))
-                  .scale(
-                    begin: const Offset(0.5, 0.5),
-                    curve: Curves.easeOutBack,
-                  )
-                  .fadeOut(
-                    delay: const Duration(milliseconds: 700),
-                    duration: const Duration(milliseconds: 200),
-                  ),
+                // 数字 2
+                Text("2", style: countdownStyle)
+                    .animate(delay: const Duration(milliseconds: 1000)) // 1秒后开始
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+                    .scale(
+                      begin: const Offset(0.5, 0.5),
+                      curve: Curves.easeOutBack,
+                    )
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 700),
+                      duration: const Duration(milliseconds: 200),
+                    ),
 
-              // 数字 1
-              Text("1", style: countdownStyle)
-                  .animate(delay: const Duration(milliseconds: 2000)) // 2秒后开始
-                  .fadeIn(duration: const Duration(milliseconds: 300))
-                  .scale(
-                    begin: const Offset(0.5, 0.5),
-                    curve: Curves.easeOutBack,
-                  )
-                  .fadeOut(
-                    delay: const Duration(milliseconds: 700),
-                    duration: const Duration(milliseconds: 200),
-                  ),
+                // 数字 1
+                Text("1", style: countdownStyle)
+                    .animate(delay: const Duration(milliseconds: 2000)) // 2秒后开始
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+                    .scale(
+                      begin: const Offset(0.5, 0.5),
+                      curve: Curves.easeOutBack,
+                    )
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 700),
+                      duration: const Duration(milliseconds: 200),
+                    ),
 
-              // 3. 衔接点：3.35秒左右出现的“设置完成！”
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("配置完成！", style: finalTextStyle)
-                      .animate(
-                        delay: const Duration(milliseconds: 3350),
-                        onPlay: (controller) => Future.delayed(
-                          const Duration(milliseconds: 3500),
-                          () {
-                            if (mounted) setState(() => _showSwipeHint = true);
-                          },
-                        ),
-                      ) // 精确匹配你要求的 335 帧（3.35秒）
-                      .fadeIn(duration: const Duration(milliseconds: 600))
-                      .slideY(begin: 0.3, end: 0, curve: Curves.easeOutQuart)
-                      .shimmer(
-                        delay: const Duration(milliseconds: 4000),
-                        duration: const Duration(milliseconds: 1500),
-                      ), // 增加一个像 Framer Motion 的光泽效果
+                // 3. 衔接点：3.35秒左右出现的“设置完成！”
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("配置完成！", style: finalTextStyle)
+                        .animate(
+                          delay: const Duration(milliseconds: 3350),
+                          onPlay: (controller) => Future.delayed(
+                            const Duration(milliseconds: 3500),
+                            () {
+                              if (mounted)
+                                setState(() => _showSwipeHint = true);
+                            },
+                          ),
+                        ) // 精确匹配你要求的 335 帧（3.35秒）
+                        .fadeIn(duration: const Duration(milliseconds: 600))
+                        .slideY(begin: 0.3, end: 0, curve: Curves.easeOutQuart)
+                        .shimmer(
+                          delay: const Duration(milliseconds: 4000),
+                          duration: const Duration(milliseconds: 1500),
+                        ), // 增加一个像 Framer Motion 的光泽效果
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                  Text("You're All Set!", style: subTextStyle)
-                      .animate(delay: const Duration(milliseconds: 3600))
-                      .fadeIn()
-                      .moveY(begin: 10, end: 0),
-                ],
-              ),
-
-              if (_showSwipeHint)
-                Positioned(
-                  bottom: 64,
-                  left: 0,
-                  right: 0,
-                  child:
-                      Column(
-                            children: [
-                              Text(
-                                _isDesktop ? '按任意键或单击鼠标进入应用' : '上滑进入应用',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              if (!_isDesktop)
-                                const Icon(Icons.keyboard_arrow_up, size: 32),
-                            ],
-                          )
-                          .animate()
-                          .fadeIn(duration: const Duration(milliseconds: 500))
-                          .moveY(begin: 20, end: 0),
+                    Text("You're All Set!", style: subTextStyle)
+                        .animate(delay: const Duration(milliseconds: 3600))
+                        .fadeIn()
+                        .moveY(begin: 10, end: 0),
+                  ],
                 ),
+
+                if (_showSwipeHint)
+                  Positioned(
+                    bottom: 64,
+                    left: 0,
+                    right: 0,
+                    child:
+                        Column(
+                              children: [
+                                Text(
+                                  _isDesktop ? '按任意键或单击鼠标进入应用' : '上滑进入应用',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                if (!_isDesktop)
+                                  const Icon(Icons.keyboard_arrow_up, size: 32),
+                              ],
+                            )
+                            .animate()
+                            .fadeIn(duration: const Duration(milliseconds: 500))
+                            .moveY(begin: 20, end: 0),
+                  ),
+              ],
             ],
           ),
         ),

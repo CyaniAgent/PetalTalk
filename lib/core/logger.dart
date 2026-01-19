@@ -11,7 +11,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../config/constants.dart';
 
 /// 日志工具类，管理应用中的所有日志输出
@@ -35,10 +34,10 @@ class AppLogger {
 
   /// 初始化日志配置
   Future<void> initialize() async {
-    // Android 权限请求
-    if (Platform.isAndroid) {
-      await _requestPermissions();
-    }
+    // Android 权限请求 - 移至后台或按需调用，避免阻塞启动
+    // if (Platform.isAndroid) {
+    //   await _requestPermissions();
+    // }
 
     // 创建控制台输出
     final consoleOutput = ConsoleOutput();
@@ -52,21 +51,6 @@ class AppLogger {
       output: AppMultiOutput([consoleOutput, _fileOutput]),
       printer: SimplePrinter(),
     );
-  }
-
-  /// 请求 Android 必要权限
-  Future<void> _requestPermissions() async {
-    try {
-      // 请求存储权限
-      await [Permission.storage].request();
-
-      // 在 Android 11+ 请求所有文件访问权限
-      if (await Permission.manageExternalStorage.isDenied) {
-        await Permission.manageExternalStorage.request();
-      }
-    } catch (e) {
-      // 忽略权限请求异常
-    }
   }
 
   /// 创建文件输出
@@ -197,12 +181,29 @@ class AppLogger {
       if (_logFilePath == null) await initialize();
       final sourceFile = File(_logFilePath!);
       if (sourceFile.existsSync()) {
-        // 创建导出目录
-        final directory = await getApplicationDocumentsDirectory();
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final exportPath = '${directory.path}/logs_$timestamp.txt';
-        final exportFile = File(exportPath);
+        String exportPath;
+        if (Platform.isAndroid) {
+          // Android 平台：导出到外部存储的 debug 目录
+          final directory = await getExternalStorageDirectory();
+          if (directory == null) throw Exception('无法获取外部存储目录');
 
+          final now = DateTime.now();
+          final timestamp =
+              "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}";
+
+          final debugDir = Directory('${directory.path}/debug');
+          if (!debugDir.existsSync()) {
+            debugDir.createSync(recursive: true);
+          }
+          exportPath = '${debugDir.path}/console_export_$timestamp.txt';
+        } else {
+          // 其他平台：保持原样，使用文档目录
+          final directory = await getApplicationDocumentsDirectory();
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          exportPath = '${directory.path}/logs_$timestamp.txt';
+        }
+
+        final exportFile = File(exportPath);
         // 复制文件
         await sourceFile.copy(exportPath);
         return exportFile;
@@ -217,10 +218,31 @@ class AppLogger {
   Future<void> deleteLogs() async {
     try {
       if (_logFilePath == null) await initialize();
-      final file = File(_logFilePath!);
-      if (file.existsSync()) {
-        await file.writeAsString('');
+
+      if (Platform.isAndroid) {
+        // Android 平台：删除 debug 目录下的所有文件
+        final directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          final debugDir = Directory('${directory.path}/debug');
+          if (debugDir.existsSync()) {
+            final files = debugDir.listSync();
+            for (final file in files) {
+              if (file is File) {
+                await file.delete();
+              }
+            }
+          }
+        }
+      } else {
+        // 其他平台：清空当前日志文件
+        final file = File(_logFilePath!);
+        if (file.existsSync()) {
+          await file.writeAsString('');
+        }
       }
+
+      // 重新初始化以创建新的日志文件
+      await initialize();
     } catch (e) {
       // 忽略错误
     }
