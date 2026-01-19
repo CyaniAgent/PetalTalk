@@ -16,6 +16,7 @@ import '../config/constants.dart';
 import '../core/service_locator.dart';
 import '../global_services/window_service.dart';
 import '../global_services/notification_service.dart';
+import '../global_services/font_service.dart';
 import './cache_service.dart';
 import './logger.dart';
 
@@ -52,6 +53,11 @@ class AppInitializer {
       // 初始化通知服务
       GlobalNotificationService().initialize().then((_) {
         logger.info('通知服务初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+      }),
+
+      // 初始化字体服务
+      FontService().init().then((_) {
+        logger.info('字体服务初始化完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
       }),
 
       // 加载端点配置，确定应用要连接的后端服务器

@@ -152,6 +152,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # 准备 Android 签名密钥（仅限 Android 构建）
+      - name: Prepare Android signing key
+        if: matrix.name == 'android' || matrix.name == 'android-aab'
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Decoding keystore from base64..."
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+            echo "KEYSTORE_PATH=${{ github.workspace }}/android/app/release.keystore" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+          else
+            echo "Warning: ANDROID_KEYSTORE_BASE64 secret not set. Using debug signing."
+          fi
+
       # 根据矩阵配置，为不同平台执行构建命令
       - name: Build Android APK
         if: matrix.name == 'android'

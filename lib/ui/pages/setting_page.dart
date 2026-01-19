@@ -637,7 +637,12 @@ class _SettingPageState extends State<SettingPage> {
   /// 显示一个包含多种字体选项的单选列表，用户可以选择应用的字体
   void _showFontFamilyDialog() {
     _logger.debug('显示字体选择对话框');
-    final List<String> fonts = ['MiSans', 'Google Sans', 'Star Rail Font'];
+    final List<String> fonts = [
+      'MiSans',
+      'Google Sans',
+      'Star Rail Font',
+      'Noto Sans',
+    ];
     showDialog(
       context: context,
       builder: (context) {

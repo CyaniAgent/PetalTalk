@@ -132,12 +132,6 @@ flutter:
     - family: Google Sans
       fonts:
         - asset: assets/fonts/GoogleSans.ttf
-    - family: MiSans
-      fonts:
-        - asset: assets/fonts/MiSans.ttf
-    - family: Star Rail Font
-      fonts:
-        - asset: assets/fonts/StarRailFont.ttf
   #
   # 有关包依赖项字体的详细信息，
   # 请参阅https://flutter.dev/to/font-from-package
