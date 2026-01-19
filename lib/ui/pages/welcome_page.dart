@@ -6,14 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'dart:math';
 
 import '../../api/flarum_api.dart';
 import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../config/constants.dart';
+import '../../services/github_service.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -388,15 +391,24 @@ class _AllSetStep extends StatefulWidget {
 class _AllSetStepState extends State<_AllSetStep> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FocusNode _focusNode = FocusNode();
+  late ConfettiController _confettiController;
   bool _showSwipeHint = false;
   bool _permissionsGranted = false;
+
+  // 版本信息相关变量
+  String _currentVersion = '0.0.0';
+  String _releaseNotes = '';
 
   bool get _isDesktop => GetPlatform.isDesktop;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     _checkPermissions();
+    _checkForUpdates();
   }
 
   Future<void> _checkPermissions() async {
@@ -427,10 +439,34 @@ class _AllSetStepState extends State<_AllSetStep> {
     }
   }
 
+  Future<void> _checkForUpdates() async {
+    if (!mounted) return;
+
+    // No need to set loading state as it's not used in UI
+
+    try {
+      // 获取当前版本
+      final packageInfo = await PackageInfo.fromPlatform();
+      _currentVersion = packageInfo.version;
+
+      // 获取最新 Release 信息
+      final githubService = GitHubService();
+      final releaseData = await githubService.getLatestRelease();
+
+      if (releaseData != null) {
+        _releaseNotes = releaseData['name'] ?? releaseData['tag_name'] ?? '';
+      }
+    } catch (e) {
+      // 忽略错误，不显示更新信息
+      print('检查更新失败: $e');
+    }
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
     _focusNode.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -469,8 +505,9 @@ class _AllSetStepState extends State<_AllSetStep> {
       color: const Color(0xFF66CCFF),
     );
 
-    final finalTextStyle = Theme.of(context).textTheme.headlineMedium?.copyWith(
+    final finalTextStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
       fontWeight: FontWeight.bold,
+      fontSize: 64,
       color: Theme.of(context).colorScheme.primary,
     );
 
@@ -510,6 +547,18 @@ class _AllSetStepState extends State<_AllSetStep> {
               const AnimatedGradientBackground(),
 
               if (_permissionsGranted) ...[
+                // 礼花动效 (Confetti)
+                ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirection: -pi / 2, // 从顶部向下
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 20,
+                  maxBlastForce: 20,
+                  minBlastForce: 10,
+                  gravity: 0.2,
+                  shouldLoop: false,
+                ),
+
                 // 1.1 背景变黑遮罩 (Fade to black)
                 // 持续时间覆盖整个倒计时过程 (约3.5秒)
                 Container(color: Colors.black)
@@ -657,13 +706,17 @@ class _AllSetStepState extends State<_AllSetStep> {
                     Text("配置完成！", style: finalTextStyle)
                         .animate(
                           delay: const Duration(milliseconds: 3350),
-                          onPlay: (controller) => Future.delayed(
-                            const Duration(milliseconds: 3500),
-                            () {
-                              if (mounted)
-                                setState(() => _showSwipeHint = true);
-                            },
-                          ),
+                          onPlay: (controller) {
+                            _confettiController.play();
+                            Future.delayed(
+                              const Duration(milliseconds: 3500),
+                              () {
+                                if (mounted) {
+                                  setState(() => _showSwipeHint = true);
+                                }
+                              },
+                            );
+                          },
                         ) // 精确匹配你要求的 335 帧（3.35秒）
                         .fadeIn(duration: const Duration(milliseconds: 600))
                         .slideY(begin: 0.3, end: 0, curve: Curves.easeOutQuart)
@@ -680,6 +733,43 @@ class _AllSetStepState extends State<_AllSetStep> {
                         .moveY(begin: 10, end: 0),
                   ],
                 ),
+
+                // 版本信息显示 (中下方) - 延迟到倒计时结束显示
+                Positioned(
+                      bottom: 120,
+                      left: 32,
+                      right: 32,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: const Color(0xFF39C5BB),
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'MiSans',
+                                  ),
+                              children: [
+                                TextSpan(text: '当前版本 $_currentVersion 更新信息:'),
+                                TextSpan(
+                                  text:
+                                      '\n${_releaseNotes.isNotEmpty ? _releaseNotes : "暂无更新信息"}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.normal,
+                                        fontFamily: 'MiSans',
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 3350))
+                    .fadeIn(duration: const Duration(milliseconds: 600)),
 
                 if (_showSwipeHint)
                   Positioned(
