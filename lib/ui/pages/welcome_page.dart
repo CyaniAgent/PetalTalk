@@ -445,10 +445,10 @@ class _AllSetStepState extends State<_AllSetStep> {
         text: text,
         duration: const Duration(milliseconds: 450),
         delay: Duration(milliseconds: delayMs),
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'MiSans',
           fontSize: 12,
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+          color: Color(0xFF66CCFF),
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -466,7 +466,7 @@ class _AllSetStepState extends State<_AllSetStep> {
     final countdownStyle = Theme.of(context).textTheme.displayLarge?.copyWith(
       fontWeight: FontWeight.bold,
       fontSize: 80,
-      color: Theme.of(context).colorScheme.primary,
+      color: const Color(0xFF66CCFF),
     );
 
     final finalTextStyle = Theme.of(context).textTheme.headlineMedium?.copyWith(
