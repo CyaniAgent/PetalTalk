@@ -68,11 +68,8 @@ class _SettingPageState extends State<SettingPage> {
   /// 最大日志大小（MB）
   final RxInt _maxLogSize = 10.obs;
 
-  /// 是否启用日志导出
+  ///是否使用日志导出
   final RxBool _enableLogExport = true.obs;
-
-  /// 是否使用浏览器请求头
-  final RxBool _useBrowserHeaders = true.obs;
 
   /// User Agent 类型
   final RxString _userAgentType = 'default'.obs;
@@ -114,7 +111,6 @@ class _SettingPageState extends State<SettingPage> {
         _appearanceService.loadLogLevel(),
         _appearanceService.loadMaxLogSize(),
         _appearanceService.loadEnableLogExport(),
-        _appearanceService.loadUseBrowserHeaders(),
         _appearanceService.loadUserAgentType(),
         _appearanceService.loadFontFamily(),
       ]);
@@ -131,9 +127,8 @@ class _SettingPageState extends State<SettingPage> {
       _logLevel.value = settings[8] as String;
       _maxLogSize.value = settings[9] as int;
       _enableLogExport.value = settings[10] as bool;
-      _useBrowserHeaders.value = settings[11] as bool;
-      _userAgentType.value = settings[12] as String;
-      _fontFamily.value = settings[13] as String;
+      _userAgentType.value = settings[11] as String;
+      _fontFamily.value = settings[12] as String;
 
       // 更新当前 User Agent 字符串显示
       _currentUserAgent.value = _getCurrentUserAgentString(
@@ -495,20 +490,6 @@ class _SettingPageState extends State<SettingPage> {
     } catch (e, stackTrace) {
       _logger.error('删除日志出错', e, stackTrace);
       SnackbarUtils.showSnackbar('删除日志失败', type: SnackbarType.error);
-    }
-  }
-
-  // 切换是否使用浏览器请求头
-  Future<void> _toggleUseBrowserHeaders(bool value) async {
-    _logger.debug('切换使用浏览器请求头: $value');
-    try {
-      await _appearanceService.saveUseBrowserHeaders(value);
-      _useBrowserHeaders.value = value;
-      _logger.info('使用浏览器请求头设置成功: $value');
-      SnackbarUtils.showSnackbar('API请求设置已更新');
-    } catch (e, stackTrace) {
-      _logger.error('切换使用浏览器请求头出错', e, stackTrace);
-      SnackbarUtils.showSnackbar('切换API请求设置失败', type: SnackbarType.error);
     }
   }
 
@@ -1165,13 +1146,6 @@ class _SettingPageState extends State<SettingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SwitchListTile(
-          title: const Text('使用浏览器请求头'),
-          subtitle: const Text('启用后，API请求将模拟浏览器行为，有助于通过某些安全校验'),
-          value: _useBrowserHeaders.value,
-          onChanged: _toggleUseBrowserHeaders,
-        ),
-        const Divider(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(

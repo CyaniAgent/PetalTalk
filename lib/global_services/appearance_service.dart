@@ -463,33 +463,6 @@ class AppearanceService {
     _logger.info('保存日志导出设置完成: $enableLogExport');
   }
 
-  /// 加载是否使用浏览器请求头
-  ///
-  /// 从SharedPreferences中加载浏览器请求头开关设置
-  ///
-  /// 返回是否使用浏览器请求头
-  Future<bool> loadUseBrowserHeaders() async {
-    _logger.debug('开始加载浏览器请求头设置');
-    final prefs = await SharedPreferences.getInstance();
-    final result = _safeGetBool(
-      prefs,
-      Constants.useBrowserHeadersKey,
-      Constants.defaultUseBrowserHeaders,
-    );
-    _logger.info('加载浏览器请求头设置完成: $result');
-    return result;
-  }
-
-  /// 保存是否使用浏览器请求头
-  ///
-  /// [useBrowserHeaders] - 是否使用浏览器请求头
-  Future<void> saveUseBrowserHeaders(bool useBrowserHeaders) async {
-    _logger.debug('开始保存浏览器请求头设置: $useBrowserHeaders');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(Constants.useBrowserHeadersKey, useBrowserHeaders);
-    _logger.info('保存浏览器请求头设置完成: $useBrowserHeaders');
-  }
-
   /// 加载 User Agent 类型
   Future<String> loadUserAgentType() async {
     _logger.debug('开始加载 User Agent 类型设置');

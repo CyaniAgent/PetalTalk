@@ -65,8 +65,6 @@ class Constants {
   static const bool defaultEnableLogExport = true;
 
   // API请求相关
-  static const String useBrowserHeadersKey = 'use_browser_headers';
-  static const bool defaultUseBrowserHeaders = true;
   static const String userAgentTypeKey = 'user_agent_type';
   static const String userAgentTypeDefault = 'default';
   static const String userAgentTypeChrome = 'chrome';

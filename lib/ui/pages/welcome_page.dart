@@ -13,6 +13,7 @@ import 'dart:io';
 import '../../api/flarum_api.dart';
 import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
+import '../../config/constants.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -208,7 +209,9 @@ class _EndpointStepState extends State<_EndpointStep> {
       }
 
       await _api.saveEndpoint(cleanedUrl);
-      widget.onNext();
+      if (mounted) {
+        await _showUserAgentDialog();
+      }
     } catch (e) {
       if (mounted) {
         SnackbarUtils.showSnackbar('无法连接到端点，请检查URL');
@@ -216,6 +219,42 @@ class _EndpointStepState extends State<_EndpointStep> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _showUserAgentDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('是否使用专用User Agent？'),
+        content: const Text(
+          '此User Agent已加入雷池WAF白名单，并使用了最新的Chrome 144内核。你需要切换吗？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              widget.onNext();
+            },
+            child: const Text('不，谢谢'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(
+                Constants.userAgentTypeKey,
+                Constants.userAgentTypeChrome,
+              );
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                widget.onNext();
+              }
+            },
+            child: const Text('切换'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -399,6 +438,23 @@ class _AllSetStepState extends State<_AllSetStep> {
     await _audioPlayer.play(AssetSource('sounds/AllSet.wav'));
   }
 
+  Widget _buildStatusLine(String text, int delayMs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: TypewriterText(
+        text: text,
+        duration: const Duration(milliseconds: 450),
+        delay: Duration(milliseconds: delayMs),
+        style: TextStyle(
+          fontFamily: 'MiSans',
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Future<void> _finishWelcome() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_welcome', true);
@@ -454,6 +510,36 @@ class _AllSetStepState extends State<_AllSetStep> {
               const AnimatedGradientBackground(),
 
               if (_permissionsGranted) ...[
+                // --- Status Typewriter Lines ---
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 40,
+                  left: 32,
+                  right: 32,
+                  child:
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStatusLine("Checking permissions... OK.", 0),
+                          _buildStatusLine(
+                            "Checking API access... Successful.",
+                            500,
+                          ),
+                          _buildStatusLine(
+                            "Initializing log debugging function... OK.",
+                            1000,
+                          ),
+                          _buildStatusLine(
+                            "Initializing application... Completed.",
+                            1500,
+                          ),
+                          _buildStatusLine("Final Audition...", 2000),
+                          _buildStatusLine("All Set!", 2500),
+                        ],
+                      ).animate().fadeOut(
+                        delay: const Duration(milliseconds: 3000),
+                        duration: const Duration(milliseconds: 300),
+                      ),
+                ),
                 // 2. 核心动画逻辑：倒计时 -> 设置完成
                 // 数字 3
                 Text("3", style: countdownStyle)
@@ -567,5 +653,64 @@ class AnimatedGradientBackground extends StatelessWidget {
           color: Theme.of(context).colorScheme.primaryContainer.withAlpha(76),
           duration: const Duration(seconds: 3),
         );
+  }
+}
+
+class TypewriterText extends StatefulWidget {
+  final String text;
+  final Duration duration;
+  final Duration delay;
+  final TextStyle? style;
+
+  const TypewriterText({
+    super.key,
+    required this.text,
+    required this.duration,
+    this.delay = Duration.zero,
+    this.style,
+  });
+
+  @override
+  State<TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<TypewriterText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _characterCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+    _characterCount = StepTween(
+      begin: 0,
+      end: widget.text.length,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _characterCount,
+      builder: (context, child) {
+        final text = widget.text.substring(0, _characterCount.value);
+        return Text(text, style: widget.style);
+      },
+    );
   }
 }

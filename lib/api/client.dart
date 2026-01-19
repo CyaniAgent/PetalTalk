@@ -6,9 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../core/logger.dart';
-import '../config/constants.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -86,21 +84,6 @@ class ApiClient {
           }
           if (_token != null) {
             options.headers['Authorization'] = 'Token $_token';
-          }
-
-          // 根据设置调整请求头
-          final prefs = await SharedPreferences.getInstance();
-          final useBrowserHeaders =
-              prefs.getBool(Constants.useBrowserHeadersKey) ??
-              Constants.defaultUseBrowserHeaders;
-
-          if (!useBrowserHeaders) {
-            // 如果不使用浏览器请求头，只保留基本请求头
-            options.headers = {
-              'Accept': 'application/vnd.api+json',
-              'Content-Type': 'application/vnd.api+json',
-              if (_token != null) 'Authorization': 'Token $_token',
-            };
           }
 
           return handler.next(options);
