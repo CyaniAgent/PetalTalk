@@ -115,7 +115,6 @@ flutter:
     - assets/icons/
     - assets/icons/logo.png
     - assets/licenses/
-    - assets/animations/
     - assets/sounds/
     - assets/images/
 
