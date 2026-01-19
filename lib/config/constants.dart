@@ -51,7 +51,7 @@ class Constants {
   static const bool defaultEnableNotifications = true;
   static const bool defaultUseDynamicColor = true;
   static const String defaultAccentColor = 'blue';
-  static const String defaultFontFamily = 'Google Sans';
+  static const String defaultFontFamily = 'MiSans';
 
   // 布局偏好
   static const String layoutPreferenceKey = 'layout_preference';

@@ -10,10 +10,10 @@ import 'package:get/get.dart';
 import '../../global_services/appearance_service.dart';
 import '../../utils/snackbar_utils.dart';
 import '../components/setting/setting_panel.dart';
-import '../../api/services/auth_service.dart';
 import '../../api/flarum_api.dart';
 import '../../core/logger.dart';
 import '../../config/constants.dart';
+import '../../state/profile_controller.dart';
 import 'license_page.dart';
 
 /// 设置页面的主组件
@@ -656,7 +656,7 @@ class _SettingPageState extends State<SettingPage> {
   /// 显示一个包含多种字体选项的单选列表，用户可以选择应用的字体
   void _showFontFamilyDialog() {
     _logger.debug('显示字体选择对话框');
-    final List<String> fonts = ['Google Sans', 'MiSans', 'Star Rail Font'];
+    final List<String> fonts = ['MiSans', 'Google Sans', 'Star Rail Font'];
     showDialog(
       context: context,
       builder: (context) {
@@ -669,7 +669,10 @@ class _SettingPageState extends State<SettingPage> {
               children: [
                 for (final font in fonts)
                   RadioListTile<String>(
-                    title: Text(font, style: TextStyle(fontFamily: font)),
+                    title: Text(
+                      font == Constants.defaultFontFamily ? '$font (默认)' : font,
+                      style: TextStyle(fontFamily: font),
+                    ),
                     value: font,
                     groupValue: _fontFamily.value,
                     onChanged: (value) {
@@ -948,7 +951,11 @@ class _SettingPageState extends State<SettingPage> {
           ),
           ListTile(
             title: const Text('字体设置'),
-            subtitle: Obx(() => Text('当前字体: ${_fontFamily.value}')),
+            subtitle: Obx(
+              () => Text(
+                '当前字体: ${_fontFamily.value}${_fontFamily.value == Constants.defaultFontFamily ? ' (默认)' : ''}',
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showFontFamilyDialog(),
           ),
@@ -1325,12 +1332,14 @@ class _SettingPageState extends State<SettingPage> {
                       if (confirm == true) {
                         // 删除所有数据
                         await _api.clearAllData();
-                        // 退出登录
-                        final AuthService authService = Get.find<AuthService>();
-                        authService.logout();
-                        // 跳转到端点选择页面
-                        Get.offAllNamed('/endpoint');
-                        SnackbarUtils.showSnackbar('已删除所有数据');
+                        // 退出登录并清除控制器数据
+                        final ProfileController profileController =
+                            Get.find<ProfileController>();
+                        profileController.logout();
+
+                        // 跳转到欢迎页面并清除所有路由
+                        Get.offAllNamed('/welcome');
+                        SnackbarUtils.showSnackbar('已删除所有数据并重置应用');
                       }
                     },
                     icon: const Icon(Icons.delete_forever),

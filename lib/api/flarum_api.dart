@@ -472,27 +472,26 @@ class FlarumApi {
     }
   }
 
-  /// 清除所有端点数据
+  /// 清除所有数据
   ///
-  /// 该方法会清除所有端点的配置和认证令牌
+  /// 该方法会清除所有端点的配置、认证令牌、应用设置以及所有Cookie
   Future<void> clearAllData() async {
+    logger.info('FlarumApi: 开始清除所有数据');
     final prefs = await SharedPreferences.getInstance();
 
-    // 获取所有与端点相关的键
-    final keys = prefs.getKeys().where((key) {
-      return key.startsWith(Constants.endpointDataPrefix) ||
-          key == Constants.endpointsKey ||
-          key == Constants.currentEndpointKey;
-    }).toList();
+    // 清除所有本地存储数据（包括设置、端点、令牌等）
+    await prefs.clear();
+    logger.debug('FlarumApi: SharedPreferences已清空');
 
-    // 删除所有相关键
-    for (final key in keys) {
-      await prefs.remove(key);
-    }
+    // 清除所有Cookie
+    await _cookieJar.deleteAll();
+    logger.debug('FlarumApi: CookieJar已清空');
 
-    // 重置状态
+    // 重置内存中的状态
     clearToken();
-    setBaseUrl(_baseUrl!);
+    // 恢复默认基础URL
+    setBaseUrl('https://flarum.imikufans.cn');
+    logger.info('FlarumApi: 所有数据清除完成');
   }
 
   /// 发送GET请求
