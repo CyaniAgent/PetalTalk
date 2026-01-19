@@ -62,11 +62,6 @@ class _UiSettingPageState extends State<UiSettingPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        titleSpacing: 0,
-        title: Text(widget.title, style: textTheme.titleMedium),
-      ),
       body: isWideScreen
           ? Row(
               children: [
@@ -121,6 +116,21 @@ class _UiSettingPageState extends State<UiSettingPage> {
                       }
                     },
                     children: [
+                      // Header with back button
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Row(
+                          children: [
+                            const BackButton(),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       // 设置项
                       ...widget.settingItems.asMap().entries.map((entry) {
                         final index = entry.key;
@@ -130,20 +140,22 @@ class _UiSettingPageState extends State<UiSettingPage> {
                         return NavigationDrawerDestination(
                           icon: isSelected
                               ? Icon(item['icon'])
-                              : Icon(item['icon'], fill: 0.0),
+                              : Icon(
+                                  item['icon'],
+                                ), // Removed fill: 0.0 generally, will handle outlined in setting_page.dart
                           label: Text(item['title']),
                         );
                       }),
                       // 退出登录按钮 - 仅在登录状态下显示
                       if (widget.showLogoutButton)
-                        NavigationDrawerDestination(
-                          icon: const Icon(Icons.logout_outlined),
-                          label: const Text('退出登录'),
+                        const NavigationDrawerDestination(
+                          icon: Icon(Icons.logout_outlined),
+                          label: Text('退出登录'),
                         ),
                       // 关于按钮
-                      NavigationDrawerDestination(
-                        icon: const Icon(Icons.info_outlined),
-                        label: const Text('关于'),
+                      const NavigationDrawerDestination(
+                        icon: Icon(Icons.info_outlined),
+                        label: Text('关于'),
                       ),
                     ],
                   ),
@@ -153,12 +165,13 @@ class _UiSettingPageState extends State<UiSettingPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Card(
-                      elevation: 2,
+                      elevation: 0,
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(24),
                         child: Obx(() {
                           final content = widget
                               .settingItems[selectedIndex.value]['content'];
@@ -173,29 +186,29 @@ class _UiSettingPageState extends State<UiSettingPage> {
                 ),
               ],
             )
-          : ListView(
-              children: [
-                ...widget.settingItems.asMap().entries.map((entry) {
-                  final int index = entry.key;
-                  final item = entry.value;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    elevation: 2,
-                    child: Column(
+          : CustomScrollView(
+              slivers: [
+                SliverAppBar.large(
+                  title: Text(widget.title),
+                  centerTitle: false,
+                  leading: const BackButton(),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final item = widget.settingItems[index];
+                    return Column(
                       children: [
                         ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
                           onTap: () {
                             _logger.debug(
                               '窄屏模式 - 点击设置项: ${item['title']}, 索引=$index',
                             );
-                            // 更新选中索引，确保设置页面与选项同步
                             selectedIndex.value = index;
                             _logger.info('切换到设置项: ${item['title']}');
-                            // 跳转到一个新页面，显示该项的内容
-                            _logger.debug('跳转到设置详情页面');
                             Get.to(
                               () => Scaffold(
                                 appBar: AppBar(title: Text(item['title'])),
@@ -208,61 +221,65 @@ class _UiSettingPageState extends State<UiSettingPage> {
                             );
                           },
                           leading: Icon(item['icon']),
-                          title: Text(item['title']),
+                          title: Text(
+                            item['title'],
+                            style: textTheme.titleMedium,
+                          ),
                           trailing: const Icon(Icons.chevron_right),
                         ),
+                        if (index < widget.settingItems.length - 1)
+                          const Divider(indent: 72, endIndent: 24, height: 1),
                       ],
-                    ),
-                  );
-                }),
-
-                const SizedBox(height: 16),
-                Visibility(
-                  visible: widget.showLogoutButton,
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    elevation: 2,
-                    child: ListTile(
-                      onTap: () {
-                        _logger.info('窄屏模式 - 执行退出登录操作');
-                        if (widget.onLogout != null) {
-                          _logger.debug('使用外部onLogout回调');
-                          widget.onLogout!();
-                        } else {
-                          _logger.debug('使用settingController.loginOut()');
-                          settingController.loginOut();
-                        }
-                      },
-                      leading: const Icon(Icons.logout_outlined),
-                      title: const Text('退出登录'),
-                    ),
+                    );
+                  }, childCount: widget.settingItems.length),
+                ),
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      if (widget.showLogoutButton) ...[
+                        const Divider(),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          onTap: () {
+                            _logger.info('窄屏模式 - 执行退出登录操作');
+                            if (widget.onLogout != null) {
+                              _logger.debug('使用外部onLogout回调');
+                              widget.onLogout!();
+                            } else {
+                              _logger.debug('使用settingController.loginOut()');
+                              settingController.loginOut();
+                            }
+                          },
+                          leading: const Icon(Icons.logout_outlined),
+                          title: const Text('退出登录'),
+                        ),
+                      ],
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        onTap: () {
+                          _logger.info('窄屏模式 - 执行关于操作');
+                          if (widget.onAbout != null) {
+                            _logger.debug('使用外部onAbout回调');
+                            widget.onAbout!();
+                          } else {
+                            _logger.debug('跳转到关于页面');
+                            Get.toNamed('/about');
+                          }
+                        },
+                        leading: const Icon(Icons.info_outlined),
+                        title: const Text('关于'),
+                      ),
+                      SizedBox(height: padding.bottom + 20),
+                    ],
                   ),
                 ),
-                Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    onTap: () {
-                      _logger.info('窄屏模式 - 执行关于操作');
-                      if (widget.onAbout != null) {
-                        _logger.debug('使用外部onAbout回调');
-                        widget.onAbout!();
-                      } else {
-                        _logger.debug('跳转到关于页面');
-                        Get.toNamed('/about');
-                      }
-                    },
-                    leading: const Icon(Icons.info_outlined),
-                    title: const Text('关于'),
-                  ),
-                ),
-                SizedBox(height: padding.bottom + 20),
               ],
             ),
     );

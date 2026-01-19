@@ -510,6 +510,76 @@ class _AllSetStepState extends State<_AllSetStep> {
               const AnimatedGradientBackground(),
 
               if (_permissionsGranted) ...[
+                // 1.1 背景变黑遮罩 (Fade to black)
+                // 持续时间覆盖整个倒计时过程 (约3.5秒)
+                Container(color: Colors.black)
+                    .animate()
+                    .fadeIn(duration: const Duration(milliseconds: 500))
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 3500),
+                      duration: const Duration(milliseconds: 500),
+                    ),
+
+                // 1.2 倒计时背景图 3
+                ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.5),
+                        BlendMode.darken,
+                      ),
+                      child: Image.asset(
+                        'assets/images/Countdown-num3.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: const Duration(milliseconds: 500))
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 1000),
+                      duration: const Duration(milliseconds: 300),
+                    ),
+
+                // 1.3 倒计时背景图 2
+                ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.5),
+                        BlendMode.darken,
+                      ),
+                      child: Image.asset(
+                        'assets/images/Countdown-num2.jpg',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 1000))
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 1000),
+                      duration: const Duration(milliseconds: 300),
+                    ),
+
+                // 1.4 倒计时背景图 1
+                ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.5),
+                        BlendMode.darken,
+                      ),
+                      child: Image.asset(
+                        'assets/images/Countdown-num1.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 2000))
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+                    .fadeOut(
+                      delay: const Duration(milliseconds: 1000),
+                      duration: const Duration(milliseconds: 300),
+                    ),
+
                 // --- Status Typewriter Lines ---
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 40,

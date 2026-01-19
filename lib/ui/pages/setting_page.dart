@@ -1259,16 +1259,16 @@ class _SettingPageState extends State<SettingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 删除所有数据
+        // 删除所有数据并重置应用
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('删除所有数据', style: Theme.of(context).textTheme.titleMedium),
+                Text('重置此应用', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                const Text('此操作将删除所有端点的数据并退出登录，不可恢复。'),
+                const Text('此操作将删除所有端点的数据并重置此应用，不可恢复。'),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
@@ -1279,16 +1279,16 @@ class _SettingPageState extends State<SettingPage> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text('确认删除所有数据'),
+                            title: const Text('确认重置此应用？'),
                             content: const Text(
-                              '此操作将删除所有端点的数据并退出登录，不可恢复。您确定要继续吗？',
+                              '此操作将删除所有端点的数据并重置此应用，不可恢复。您确定要继续吗？',
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () {
                                   Get.back(result: false);
                                 },
-                                child: const Text('取消'),
+                                child: const Text('手滑了，取消'),
                               ),
                               TextButton(
                                 onPressed: () {
@@ -1297,7 +1297,7 @@ class _SettingPageState extends State<SettingPage> {
                                 style: TextButton.styleFrom(
                                   foregroundColor: Colors.red,
                                 ),
-                                child: const Text('删除'),
+                                child: const Text('确认重置'),
                               ),
                             ],
                           );
@@ -1313,11 +1313,11 @@ class _SettingPageState extends State<SettingPage> {
 
                         // 跳转到欢迎页面并清除所有路由
                         Get.offAllNamed('/welcome');
-                        SnackbarUtils.showSnackbar('已删除所有数据并重置应用');
+                        SnackbarUtils.showSnackbar('已重置应用');
                       }
                     },
-                    icon: const Icon(Icons.delete_forever),
-                    label: const Text('删除所有数据'),
+                    icon: const Icon(Icons.cancel),
+                    label: const Text('重置此应用'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                     ),
@@ -1337,7 +1337,7 @@ class _SettingPageState extends State<SettingPage> {
   List<Map<String, dynamic>> _buildSettingItems() {
     return [
       {
-        'icon': Icons.person,
+        'icon': Icons.person_outline,
         'title': '账号设置',
         'content': _buildAccountSettings(),
       },
@@ -1347,13 +1347,13 @@ class _SettingPageState extends State<SettingPage> {
         'content': _buildEndpointSettings(),
       },
       {
-        'icon': Icons.notifications,
-        'title': '通知设置',
+        'icon': Icons.notifications_outlined,
+        'title': '通知',
         'content': _buildNotificationSettings(),
       },
       {
-        'icon': Icons.palette,
-        'title': '外观设置',
+        'icon': Icons.palette_outlined,
+        'title': '外观',
         'content': _buildAppearanceSettings(),
       },
       {
@@ -1361,14 +1361,18 @@ class _SettingPageState extends State<SettingPage> {
         'title': '帮助与反馈',
         'content': _buildHelpSettings(),
       },
-      {'icon': Icons.history, 'title': '日志设置', 'content': _buildLogSettings()},
       {
-        'icon': Icons.cloud_upload,
-        'title': 'API请求设置',
+        'icon': Icons.history_outlined,
+        'title': '日志',
+        'content': _buildLogSettings(),
+      },
+      {
+        'icon': Icons.cloud_upload_outlined,
+        'title': 'API请求',
         'content': _buildApiRequestSettings(),
       },
       {
-        'icon': Icons.data_saver_on,
+        'icon': Icons.storage_outlined,
         'title': '数据管理',
         'content': _buildDataSettings(),
       },
