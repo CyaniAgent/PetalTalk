@@ -35,6 +35,8 @@ class _DiscussionListState extends State<DiscussionList>
   bool _hasMore = true;
   int _offset = 0;
   final int _limit = 20;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   // 存储用户信息，key是userId，value是用户名
   final Map<String, String> _users = {};
@@ -45,6 +47,12 @@ class _DiscussionListState extends State<DiscussionList>
   void initState() {
     super.initState();
     _loadDiscussions();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -66,6 +74,7 @@ class _DiscussionListState extends State<DiscussionList>
     final result = await _discussionService.getDiscussions(
       offset: isRefresh ? 0 : _offset,
       limit: _limit,
+      query: _searchQuery,
     );
 
     // 检查组件是否仍然挂载
@@ -124,6 +133,36 @@ class _DiscussionListState extends State<DiscussionList>
     await _loadDiscussions();
   }
 
+  // 处理搜索
+  Future<void> _handleSearch(String query) async {
+    if (_searchQuery == query) return;
+
+    setState(() {
+      _searchQuery = query;
+      _discussions.clear();
+      _offset = 0;
+      _hasMore = true;
+      _isLoading = true;
+    });
+
+    try {
+      await _loadDiscussions();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        SnackbarUtils.showSnackbar('搜索失败: $e', type: SnackbarType.error);
+      }
+    }
+  }
+
+  // 清除搜索
+  void _clearSearch() {
+    _searchController.clear();
+    _handleSearch('');
+  }
+
   // 跳转到主题帖详情页
   void _gotoDiscussionDetail(Discussion discussion) {
     Get.toNamed('/discussion/${discussion.id}', arguments: discussion);
@@ -141,6 +180,7 @@ class _DiscussionListState extends State<DiscussionList>
             borderRadius: BorderRadius.circular(20),
           ),
           child: TextField(
+            controller: _searchController,
             decoration: InputDecoration(
               hintText: '搜索帖子...',
               hintStyle: TextStyle(
@@ -152,12 +192,18 @@ class _DiscussionListState extends State<DiscussionList>
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: 20,
               ),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: _clearSearch,
+                    )
+                  : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
+            textInputAction: TextInputAction.search,
             onSubmitted: (value) {
-              // 搜索功能
-              SnackbarUtils.showDevelopmentInProgress();
+              _handleSearch(value);
             },
           ),
         ),

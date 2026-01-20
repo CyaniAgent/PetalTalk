@@ -15,6 +15,7 @@ import '../../core/logger.dart';
 import '../../config/constants.dart';
 import '../../state/profile_controller.dart';
 import 'license_page.dart';
+import '../../global_services/font_service.dart';
 
 /// 设置页面的主组件
 class SettingPage extends StatefulWidget {
@@ -634,46 +635,137 @@ class _SettingPageState extends State<SettingPage> {
 
   /// 显示字体选择对话框
   ///
-  /// 显示一个包含多种字体选项的单选列表，用户可以选择应用的字体
+  /// 显示一个包含多种字体选项的列表，支持下载未缓存的字体
   void _showFontFamilyDialog() {
     _logger.debug('显示字体选择对话框');
-    final List<String> fonts = [
-      'MiSans',
-      'Google Sans',
-      'Star Rail Font',
-      'Noto Sans',
-    ];
+    final fontService = FontService();
+    // 使用 Map 来存储每个字体的下载状态: 0=未开始, 1=下载中, 2=已下载
+    // Google Sans 默认为已存在，不需要下载
+    final Map<String, bool> fontCacheStatus = {};
+    final Map<String, bool> downloadingStatus = {};
+    final Map<String, double> downloadProgress = {};
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('选择字体'),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final font in fonts)
-                  RadioListTile<String>(
-                    title: Text(
-                      font == Constants.defaultFontFamily ? '$font (默认)' : font,
-                      style: TextStyle(fontFamily: font),
-                    ),
-                    value: font,
-                    groupValue: _fontFamily.value,
-                    onChanged: (value) {
-                      if (value != null) {
-                        _updateFontFamily(value);
-                        Get.back();
-                      }
-                    },
-                  ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // 初始化检查缓存状态
+            if (fontCacheStatus.isEmpty) {
+              for (var font in fontService.supportedFonts.keys) {
+                if (font == 'Google Sans') continue;
+                fontService.isFontCached(font).then((cached) {
+                  if (context.mounted) {
+                    setState(() {
+                      fontCacheStatus[font] = cached;
+                    });
+                  }
+                });
+              }
+            }
+
+            final List<String> fonts = [
+              'Google Sans',
+              ...fontService.supportedFonts.keys,
+            ];
+
+            // 去重，因为 supportedFonts 可能包含或不包含 Google Sans
+            final uniqueFonts = fonts.toSet().toList();
+
+            return AlertDialog(
+              title: const Text('选择字体'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: uniqueFonts.length,
+                  itemBuilder: (context, index) {
+                    final font = uniqueFonts[index];
+                    final isDefault = font == 'Google Sans';
+                    final isCached =
+                        isDefault || (fontCacheStatus[font] ?? false);
+                    final isDownloading = downloadingStatus[font] ?? false;
+                    final progress = downloadProgress[font] ?? 0.0;
+                    final isSelected = _fontFamily.value == font;
+
+                    return ListTile(
+                      title: Text(
+                        font == Constants.defaultFontFamily
+                            ? '$font (默认)'
+                            : font,
+                        style: TextStyle(fontFamily: isCached ? font : null),
+                      ),
+                      trailing: isDownloading
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                value: progress > 0 ? progress : null,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : isCached
+                          ? (isSelected
+                                ? const Icon(Icons.check, color: Colors.blue)
+                                : null)
+                          : IconButton(
+                              icon: const Icon(Icons.download),
+                              onPressed: () async {
+                                setState(() {
+                                  downloadingStatus[font] = true;
+                                  downloadProgress[font] = 0.0;
+                                });
+
+                                try {
+                                  await fontService.downloadFont(
+                                    font,
+                                    onReceiveProgress: (count, total) {
+                                      if (total != -1) {
+                                        setState(() {
+                                          downloadProgress[font] =
+                                              count / total;
+                                        });
+                                      }
+                                    },
+                                  );
+                                  if (context.mounted) {
+                                    setState(() {
+                                      downloadingStatus[font] = false;
+                                      fontCacheStatus[font] = true;
+                                    });
+                                  }
+                                  SnackbarUtils.showSnackbar('$font 下载完成');
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    setState(() {
+                                      downloadingStatus[font] = false;
+                                    });
+                                  }
+                                  SnackbarUtils.showSnackbar(
+                                    '$font 下载失败: $e',
+                                    type: SnackbarType.error,
+                                  );
+                                }
+                              },
+                            ),
+                      onTap: isCached
+                          ? () {
+                              _updateFontFamily(font);
+                              Get.back();
+                            }
+                          : null,
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('取消'),
+                ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Get.back(), child: const Text('取消')),
-          ],
+            );
+          },
         );
       },
     );

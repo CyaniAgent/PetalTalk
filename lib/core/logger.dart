@@ -99,6 +99,7 @@ class AppLogger {
       );
     } catch (e) {
       // 如果文件创建失败，返回本地控制台输出
+      print('AppLogger Error: Failed to create file output: $e');
       final defaultPath = './app_logs.txt';
       _logFilePath = defaultPath;
       return AppFileOutput(
@@ -305,13 +306,17 @@ class AppFileOutput extends LogOutput {
   @override
   Future<void> init() async {
     if (_sink != null) return;
-    if (overrideExisting) {
-      if (file.existsSync()) {
-        file.deleteSync();
+    try {
+      if (overrideExisting) {
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
       }
+      file.createSync(recursive: true);
+      _sink = file.openWrite(mode: mode);
+    } catch (e) {
+      print('AppFileOutput Error: Failed to init sink: $e');
     }
-    file.createSync(recursive: true);
-    _sink = file.openWrite(mode: mode);
   }
 
   @override
@@ -336,7 +341,7 @@ class AppMultiOutput extends LogOutput {
   @override
   Future<void> init() async {
     for (var output in outputs) {
-      await output.init();
+      output.init();
     }
   }
 

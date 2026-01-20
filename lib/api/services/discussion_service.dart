@@ -31,15 +31,24 @@ class DiscussionService {
   Future<Map<String, dynamic>?> getDiscussions({
     int offset = 0,
     int limit = 20,
+    String? query,
   }) async {
     // 生成缓存键
-    final cacheKey = 'cache_discussions_${offset}_$limit';
+    final cacheKey = 'cache_discussions_${offset}_${limit}_${query ?? ''}';
 
     try {
-      // 优先请求网络数据
+      // 准备查询参数
+      final Map<String, dynamic> queryParams = {
+        'page[offset]': offset,
+        'page[limit]': limit,
+      };
+
+      if (query != null && query.isNotEmpty) {
+        queryParams['filter[q]'] = query;
+      }
       final response = await _api.get(
         '/api/discussions',
-        queryParameters: {'page[offset]': offset, 'page[limit]': limit},
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
