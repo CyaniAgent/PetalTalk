@@ -7,6 +7,8 @@
 /// 4. 自动保持组件状态
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:m3e_collection/m3e_collection.dart';
@@ -14,6 +16,9 @@ import 'package:m3e_collection/m3e_collection.dart';
 import '../../api/services/discussion_service.dart';
 import '../../api/models/discussion.dart';
 import '../../utils/snackbar_utils.dart';
+import '../../core/logger.dart';
+import '../../state/main_state.dart';
+import '../components/search/search_widget.dart' as search_widget;
 import '../components/discussion/discussion_card.dart';
 import '../components/common/ui_main_frame.dart';
 import 'notification_page.dart';
@@ -30,13 +35,13 @@ class DiscussionList extends StatefulWidget {
 class _DiscussionListState extends State<DiscussionList>
     with AutomaticKeepAliveClientMixin<DiscussionList> {
   final DiscussionService _discussionService = Get.find<DiscussionService>();
+  final AppLogger _logger = AppLogger();
   final List<Discussion> _discussions = [];
   bool _isLoading = false;
   bool _hasMore = true;
   int _offset = 0;
   final int _limit = 20;
-  String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
+  late final search_widget.SearchLogicController _searchController;
 
   // 存储用户信息，key是userId，value是用户名
   final Map<String, String> _users = {};
@@ -46,7 +51,18 @@ class _DiscussionListState extends State<DiscussionList>
   @override
   void initState() {
     super.initState();
-    _loadDiscussions();
+    _searchController = search_widget.SearchLogicController();
+    _searchController.onSearch = _handleSearchRequest;
+    _loadDiscussions(query: _searchController.state.query);
+    
+    // 监听首页按钮重复点击事件
+    final mainController = Get.find<UiMainController>();
+    mainController.homeReselected.listen((reselect) {
+      if (reselect && _searchController.state.query.isNotEmpty) {
+        _logger.info('首页按钮重复点击，关闭搜索并返回首页');
+        _searchController.clearSearch();
+      }
+    });
   }
 
   @override
@@ -59,7 +75,7 @@ class _DiscussionListState extends State<DiscussionList>
   bool get wantKeepAlive => true;
 
   // 加载主题帖列表
-  Future<void> _loadDiscussions({bool isRefresh = false}) async {
+  Future<void> _loadDiscussions({bool isRefresh = false, String? query}) async {
     if (_isLoading || (!_hasMore && !isRefresh)) return;
 
     // 对于刷新操作，不显示额外的加载动画，只使用RefreshIndicator的动画
@@ -74,7 +90,7 @@ class _DiscussionListState extends State<DiscussionList>
     final result = await _discussionService.getDiscussions(
       offset: isRefresh ? 0 : _offset,
       limit: _limit,
-      query: _searchQuery,
+      query: query ?? _searchController.state.query,
     );
 
     // 检查组件是否仍然挂载
@@ -125,43 +141,45 @@ class _DiscussionListState extends State<DiscussionList>
 
   // 下拉刷新
   Future<void> _handleRefresh() async {
-    await _loadDiscussions(isRefresh: true);
+    await _loadDiscussions(isRefresh: true, query: _searchController.state.query);
   }
 
   // 上拉加载更多
   Future<void> _handleLoadMore() async {
-    await _loadDiscussions();
+    await _loadDiscussions(query: _searchController.state.query);
   }
 
-  // 处理搜索
-  Future<void> _handleSearch(String query) async {
-    if (_searchQuery == query) return;
-
-    setState(() {
-      _searchQuery = query;
-      _discussions.clear();
-      _offset = 0;
-      _hasMore = true;
-      _isLoading = true;
-    });
+  // 处理搜索请求（SearchLogicController回调）
+  Future<void> _handleSearchRequest(String query) async {
+    if (mounted) {
+      setState(() {
+        _discussions.clear();
+        _offset = 0;
+        _hasMore = true;
+        _isLoading = true;
+      });
+    }
 
     try {
-      await _loadDiscussions();
+      await _loadDiscussions(query: query);
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        SnackbarUtils.showSnackbar('搜索失败: $e', type: SnackbarType.error);
       }
+      // 错误处理由SearchLogicController负责，这里只重新抛出异常
+      rethrow;
     }
   }
 
-  // 清除搜索
-  void _clearSearch() {
-    _searchController.clear();
-    _handleSearch('');
-  }
+
 
   // 跳转到主题帖详情页
   void _gotoDiscussionDetail(Discussion discussion) {
@@ -179,32 +197,9 @@ class _DiscussionListState extends State<DiscussionList>
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: TextField(
+          child: search_widget.SearchWidget(
             controller: _searchController,
-            decoration: InputDecoration(
-              hintText: '搜索帖子...',
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: _clearSearch,
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            ),
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) {
-              _handleSearch(value);
-            },
+            hintText: '搜索帖子...',
           ),
         ),
       ),

@@ -192,43 +192,49 @@ class FlarumApi {
     _dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onError: (DioException e, ErrorInterceptorHandler handler) async {
-          // 检查是否为WAF拦截（通常403或405，或者特定内容）
-          // 阿里云ESA/LeiChi有时返回403，有时返回405
-          if (e.response?.statusCode == 403 || e.response?.statusCode == 405) {
-            logger.debug('FlarumApi: 检测到WAF拦截，尝试触发验证');
-            // 尝试触发验证
-            final requestOptions = e.requestOptions;
-            final url = '${requestOptions.baseUrl}${requestOptions.path}';
-
-            try {
-              // 显示验证窗口
-              final cookieValue = await VerificationWindow.show(url);
-
-              if (cookieValue != null) {
-                logger.debug('FlarumApi: WAF验证成功，添加Cookie');
-
-                // 验证成功，添加Cookie到CookieJar
-                final uri = Uri.parse(_baseUrl!);
-                final cookie = Cookie('acw_sc__v2', cookieValue)
-                  ..domain = uri.host
-                  ..path = '/'
-                  ..httpOnly = true;
-
-                await _cookieJar.saveFromResponse(uri, [cookie]);
-
-                // 重试请求
-                logger.debug('FlarumApi: WAF验证成功，重试请求');
-                final response = await _dio.fetch(requestOptions);
-                return handler.resolve(response);
-              } else {
-                logger.warning('FlarumApi: WAF验证失败或取消');
-              }
-            } catch (err) {
-              logger.error('FlarumApi: WAF验证过程中发生错误', err);
-              // 验证失败或取消
-            }
-          }
-          return handler.next(e);
+                  // 检查是否为WAF拦截或API错误（常见WAF状态码：403, 405, 400, 429等）
+                  // 阿里云ESA/LeiChi可能返回403、405，搜索请求可能触发400、429等错误
+                  final statusCode = e.response?.statusCode;
+                  final isWafError = statusCode == 403 || 
+                                    statusCode == 405 || 
+                                    statusCode == 400 ||  // 错误请求，可能被WAF拦截
+                                    statusCode == 429 ||  // 请求过多，可能被WAF限流
+                                    statusCode == 503;    // 服务不可用，可能被WAF阻断
+                  
+                  if (isWafError) {
+                    logger.debug('FlarumApi: 检测到WAF拦截或API错误 (状态码: $statusCode)，尝试触发验证');
+                    // 尝试触发验证
+                    final requestOptions = e.requestOptions;
+                    final url = '${requestOptions.baseUrl}${requestOptions.path}';
+          
+                    try {
+                      // 显示验证窗口
+                      final cookieValue = await VerificationWindow.show(url);
+          
+                      if (cookieValue != null) {
+                        logger.debug('FlarumApi: WAF验证成功，添加Cookie');
+          
+                        // 验证成功，添加Cookie到CookieJar
+                        final uri = Uri.parse(_baseUrl!);
+                        final cookie = Cookie('acw_sc__v2', cookieValue)
+                          ..domain = uri.host
+                          ..path = '/'
+                          ..httpOnly = true;
+          
+                        await _cookieJar.saveFromResponse(uri, [cookie]);
+          
+                        // 重试请求
+                        logger.debug('FlarumApi: WAF验证成功，重试请求');
+                        final response = await _dio.fetch(requestOptions);
+                        return handler.resolve(response);
+                      } else {
+                        logger.warning('FlarumApi: WAF验证失败或取消');
+                      }
+                    } catch (err) {
+                      logger.error('FlarumApi: WAF验证过程中发生错误', err);
+                      // 验证失败或取消
+                    }
+                  }          return handler.next(e);
         },
       ),
     );

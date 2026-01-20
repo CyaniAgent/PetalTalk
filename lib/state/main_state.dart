@@ -32,6 +32,7 @@ class UiMainController extends GetxController {
   Rx<DynamicBadgeMode> dynamicBadgeType = DynamicBadgeMode.point.obs; // 默认红点模式
   RxBool enableGradientBg = true.obs;
   RxBool imgPreviewStatus = false.obs;
+  RxBool homeReselected = false.obs; // 首页按钮重复点击标志
 
   @override
   void onInit() {
@@ -98,6 +99,13 @@ class UiMainController extends GetxController {
   /// 设置选中索引
   void setSelectedIndex(int index) {
     _logger.debug('设置选中索引: 从 ${selectedIndex.value} 到 $index');
+    
+    // 检查是否是首页按钮重复点击
+    if (index == 0 && selectedIndex.value == 0) {
+      _logger.debug('首页按钮重复点击，触发homeReselected事件');
+      homeReselected.value = !homeReselected.value; // 切换值以触发监听器
+    }
+    
     selectedIndex.value = index;
     pageController.jumpToPage(index);
     _logger.info('页面切换完成: 索引 = $index');

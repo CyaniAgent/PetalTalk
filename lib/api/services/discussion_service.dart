@@ -37,6 +37,13 @@ class DiscussionService {
     final cacheKey = 'cache_discussions_${offset}_${limit}_${query ?? ''}';
 
     try {
+      // 记录搜索请求详情
+      if (query != null && query.isNotEmpty) {
+        logger.debug('搜索请求 - query: "$query", offset: $offset, limit: $limit');
+      } else {
+        logger.debug('获取主题帖列表 - offset: $offset, limit: $limit');
+      }
+      
       // 准备查询参数
       final Map<String, dynamic> queryParams = {
         'page[offset]': offset,
